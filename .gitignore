@@ -65,6 +65,7 @@ dmypy.json
 
 # Environments
 .env
+!.env.example
 .venv
 env/
 venv/
@@ -122,6 +123,7 @@ $RECYCLE.BIN/
 *.env
 .env.*
 secrets.env
+!.env.example
 
 # Ignore coverage and profiling
 .prof
