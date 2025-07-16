@@ -1,20 +1,10 @@
 name: Release and Deploy
 
 on:
-  push:
-    branches: [ main ]
-    tags: [ 'v*' ]
-  workflow_dispatch:
-    inputs:
-      version_bump:
-        description: 'Version bump type'
-        required: true
-        default: 'patch'
-        type: choice
-        options:
-          - patch
-          - minor
-          - major
+  workflow_run:
+    workflows: ["AClimate v3 Historical Location ETL Pipeline"]
+    types:
+      - completed
 
 permissions:
   contents: write
@@ -25,12 +15,13 @@ jobs:
   auto-release:
     name: Auto Release from Main
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'stage'
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
+        ref: main
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
     
