@@ -65,7 +65,7 @@ jobs:
         
         # Create comprehensive release package
         tar -czf aclimate-v3-etl-${{ steps.tag_version.outputs.new_version }}.tar.gz \
-          src/ tests/ README.md LICENSE pyproject.toml requirements.txt
+          src/ tests/ README.md pyproject.toml requirements.txt
     
     - name: Create Release
       id: create_release
@@ -173,7 +173,7 @@ jobs:
         # Get version from tag
         VERSION=${GITHUB_REF#refs/tags/v}
         tar -czf aclimate-v3-etl-${VERSION}.tar.gz \
-          src/ tests/ README.md LICENSE pyproject.toml requirements.txt
+          src/ tests/ README.md pyproject.toml requirements.txt
     
     - name: Create Release
       uses: softprops/action-gh-release@v1
