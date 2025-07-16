@@ -29,7 +29,7 @@ class LoggingManager:
         self.service_name = service_name
         self.endpoint = os.getenv("OTLP_ENDPOINT", "localhost:4317")
         self._signoz_enabled = os.getenv("ENABLE_SIGNOZ", "false").lower() == "true"
-        self.log_file = log_file or os.getenv("LOG_FILE_PATH", "application.log")
+        self.log_file: str = log_file or os.getenv("LOG_FILE_PATH", "application.log")
         self._initialize_logging()
 
     def _is_endpoint_available(self, endpoint: str) -> bool:
