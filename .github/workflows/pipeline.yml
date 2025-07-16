@@ -1,8 +1,6 @@
 name: AClimate v3 Historical Location ETL Pipeline
 
 on:
-  push:
-    branches: [ stage ]
   pull_request:
     branches: [ stage ]
     types: [opened, synchronize, reopened]
@@ -75,7 +73,7 @@ jobs:
     name: Build Package
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/stage' && github.event_name == 'push'
+    if: github.event_name == 'pull_request'
     
     steps:
     - name: Checkout code
@@ -106,31 +104,6 @@ jobs:
         path: dist/
         retention-days: 30
 
-  # ------- MERGE STAGE TO MAIN -------- #
-  merge-to-main:
-    name: Auto-merge stage to main
-    needs: [test, build]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/stage' && github.event_name == 'push'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        fetch-depth: 0
-    
-    - name: Configure Git
-      run: |
-        git config user.name "GitHub Actions"
-        git config user.email "actions@github.com"
-    
-    - name: Merge stage to main
-      run: |
-        git checkout main
-        git merge origin/stage --no-ff -m "Auto-merge stage to main"
-        git push origin main
-
   # ------- NOTIFICATION -------- #
   notify:
     name: Send Notifications
@@ -142,12 +115,12 @@ jobs:
     - name: Notify Success
       if: needs.test.result == 'success' && needs.build.result == 'success'
       run: |
-        echo "✅ Pipeline completed successfully for branch: ${{ github.ref_name }}"
+        echo "✅ Pipeline completed successfully for PR to stage"
         echo "All tests passed and package built successfully!"
     
     - name: Notify Failure
       if: needs.test.result == 'failure' || needs.build.result == 'failure'
       run: |
-        echo "❌ Pipeline failed for branch: ${{ github.ref_name }}"
+        echo "❌ Pipeline failed for PR to stage"
         echo "Check the logs for more details."
         exit 1

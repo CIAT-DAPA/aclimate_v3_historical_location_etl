@@ -1,0 +1,31 @@
+name: Stage to Main Merge
+
+on:
+  push:
+    branches: [ stage ]
+
+permissions:
+  contents: write
+
+jobs:
+  merge-to-main:
+    name: Auto-merge stage to main
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Configure Git
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+    
+    - name: Merge stage to main
+      run: |
+        git checkout main
+        git merge origin/stage --no-ff -m "Auto-merge stage to main"
+        git push origin main
