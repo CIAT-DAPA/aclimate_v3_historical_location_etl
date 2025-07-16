@@ -21,7 +21,7 @@ class LoggingManager:
     """Centralized logging management with file logging and optional SigNoz integration."""
 
     def __init__(
-        self, service_name: str = "historical_spatial_etl_service", log_file: str = None
+        self, service_name: str = "historical_spatial_etl_service", log_file: Optional[str] = None
     ):
         load_dotenv()
         self.service_name = service_name
@@ -39,7 +39,7 @@ class LoggingManager:
         except (socket.timeout, ConnectionRefusedError, ValueError, socket.gaierror):
             return False
 
-    def _initialize_logging(self):
+    def _initialize_logging(self) -> None:
         """Initialize logging with file logging and optional SigNoz integration."""
         # Basic standard logging setup
         self.logger = logging.getLogger(self.service_name)
@@ -76,7 +76,7 @@ class LoggingManager:
         if self._signoz_enabled:
             self._try_initialize_signoz(formatter)
 
-    def _try_initialize_signoz(self, formatter):
+    def _try_initialize_signoz(self, formatter: logging.Formatter) -> None:
         """Try to initialize SigNoz logging if enabled and available."""
         try:
             if not self._is_endpoint_available(self.endpoint):
@@ -98,7 +98,7 @@ class LoggingManager:
             _logs.set_logger_provider(logger_provider)
 
             exporter = OTLPLogExporter(
-                endpoint=self.endpoint, insecure=True, timeout=5, retry_policy=None
+                endpoint=self.endpoint, insecure=True, timeout=5
             )
 
             logger_provider.add_log_record_processor(
@@ -174,19 +174,19 @@ class LoggingManager:
         log_method(message, extra=safe_extra)
 
     # Convenience methods
-    def info(self, message: str, component: Optional[str] = None, **kwargs):
+    def info(self, message: str, component: Optional[str] = None, **kwargs: Any) -> None:
         self.log("info", message, component, kwargs)
 
-    def warning(self, message: str, component: Optional[str] = None, **kwargs):
+    def warning(self, message: str, component: Optional[str] = None, **kwargs: Any) -> None:
         self.log("warning", message, component, kwargs)
 
-    def error(self, message: str, component: Optional[str] = None, **kwargs):
+    def error(self, message: str, component: Optional[str] = None, **kwargs: Any) -> None:
         self.log("error", message, component, kwargs)
 
-    def debug(self, message: str, component: Optional[str] = None, **kwargs):
+    def debug(self, message: str, component: Optional[str] = None, **kwargs: Any) -> None:
         self.log("debug", message, component, kwargs)
 
-    def exception(self, message: str, component: Optional[str] = None, **kwargs):
+    def exception(self, message: str, component: Optional[str] = None, **kwargs: Any) -> None:
         self.log("exception", message, component, kwargs)
 
 
