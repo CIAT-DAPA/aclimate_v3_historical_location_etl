@@ -182,181 +182,34 @@ def main():
         info("Data extraction and validation completed successfully",
              component="main",
              total_records=len(data))
-        return
-        # Initialize data aggregator
+
+        # Initialize data aggregator for monthly calculations
         data_aggregator = DataAggregator()
         
-        # Climatology calculation not implemented yet
-        # climatology_calculator = ClimatologyCalculator() if args.climatology else None
-        
-        # Validate inputs
-        start_date, end_date = validate_dates(args.start_date, args.end_date)
-        
-        # Get locations using database manager
-        try:
-            if args.location_ids:
-                locations = db_manager.get_locations_by_ids(args.location_ids, args.country)
+        # Calculate monthly aggregations
+        monthly_data = data_aggregator.calculate_monthly_aggregations(data)
+
+        # Save monthly data to database
+        if not monthly_data.empty:
+            monthly_save_success = db_manager.save_monthly_data(monthly_data, args.country, geoserver_config)
+            if not monthly_save_success:
+                warning("Some errors occurred while saving monthly data to database", 
+                       component="main")
             else:
-                locations = db_manager.get_all_locations(args.country)
-        except Exception as e:
-            error("Failed to retrieve locations", 
-                  component="main",
-                  error=str(e))
-            print(f"ERROR: Failed to retrieve locations: {str(e)}")
-            sys.exit(1)
-        
-        if not locations:
-            error("No locations found for processing", 
-                  component="main",
-                  country=args.country,
-                  location_criteria=args.location_ids or "all")
-            print("ERROR: No locations found for processing")
-            sys.exit(1)
-        
-        # Setup directories (optional, only if data_path provided)
-        directories = setup_directories(args.data_path, args.country)
-        
-        # Variables configuration is now handled in GeoServer client
-        info("ETL Pipeline configuration", 
-             component="main",
-             country=args.country,
-             date_range=f"{args.start_date} to {args.end_date}",
-             location_count=len(locations))
-        
-        # Convert locations to format expected by spatial processor
-        locations_list = []
-        for location in locations:
-            locations_list.append({
-                'id': location.id,
-                'name': location.name,
-                'latitude': location.latitude,
-                'longitude': location.longitude
-            })
-        
-        # Main processing loop
-        all_daily_data = []
-        
-        if not args.skip_download:
-            # Step 1: Extract location data from GeoServer
-            info("Starting location data extraction from GeoServer", 
-                 component="main",
-                 date_range=f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
-            
-            try:
-                # Determine location IDs for extraction
-                location_ids_str = args.location_ids if args.location_ids else "all"
-                
-                # Extract data using the simplified GeoServer client
-                df_extracted = geoserver_client.extract_location_data(
-                    location_ids_str,
-                    args.country,
-                    start_date,
-                    end_date
-                )
-                
-                info(f"Extracted {len(df_extracted)} records of location data", 
+                info("All monthly aggregations saved successfully to database", 
                      component="main")
-                
-                all_daily_data = df_extracted
-                
-                info(f"Processed {len(all_daily_data)} days of point data", 
-                     component="main")
-                
-            except Exception as e:
-                error("Failed to download or process spatial data", 
-                      component="main",
-                      error=str(e))
-                print(f"ERROR: Failed to download spatial data: {str(e)}")
-                sys.exit(1)
-        
-        # Step 3: Save daily data to database
-        if all_daily_data:
-            info("Saving daily data to database", component="main")
-            
-            for daily_data in all_daily_data:
-                try:
-                    # Group by location and save
-                    for location_id, location_data in daily_data.get('locations', {}).items():
-                        # Find the location object
-                        location = next((s for s in locations if s.id == location_id), None)
-                        if location:
-                            processed_data = {
-                                'location_id': location_id,
-                                'date': daily_data['date'],
-                                'data': location_data
-                            }
-                            
-                            # Save to database (this would be implemented in database_manager)
-                            # db_manager.save_daily_data(location_id, processed_data)
-                            
-                except Exception as e:
-                    error(f"Failed to save daily data for date {daily_data['date']}", 
-                          component="main",
-                          error=str(e))
-                    continue
-        
-        # Step 4: Calculate monthly aggregations
-        info("Calculating monthly aggregations", component="main")
-        
-        # Group daily data by month
-        monthly_data = {}
-        for daily_data in all_daily_data:
-            date_obj = datetime.fromisoformat(daily_data['date']).date()
-            month_key = f"{date_obj.year}-{date_obj.month:02d}"
-            
-            if month_key not in monthly_data:
-                monthly_data[month_key] = []
-            monthly_data[month_key].append(daily_data)
-        
-        # Calculate aggregations for each month
-        for month_key, month_daily_data in monthly_data.items():
-            year, month = month_key.split('-')
-            year, month = int(year), int(month)
-            
-            try:
-                monthly_aggregations = data_aggregator.calculate_monthly_aggregations(
-                    month_daily_data, year, month
-                )
-                
-                # Save monthly aggregations to database
-                for location_id, location_monthly in monthly_aggregations.get('locations', {}).items():
-                    # Find the location object
-                    location = next((s for s in locations if s.id == location_id), None)
-                    if location:
-                        # Save to database (this would be implemented in database_manager)
-                        # db_manager.save_monthly_data(location_id, location_monthly)
-                        pass
-                
-                info(f"Monthly aggregations calculated for {year}-{month:02d}", 
-                     component="main",
-                     year=year,
-                     month=month,
-                     locations_processed=len(monthly_aggregations.get('locations', {})))
-                
-            except Exception as e:
-                error(f"Failed to calculate monthly aggregations for {month_key}", 
-                      component="main",
-                      error=str(e))
-                continue
-        
-        # Step 5: Calculate climatology (not implemented yet)
-        # TODO: Implement climatology calculation when ClimatologyCalculator is available
-        
-        # Cleanup temporary files
-        cleanup_temp_files(directories)
         
         info("ETL Pipeline completed successfully", 
              component="main",
              country=args.country,
-             locations_processed=len(locations),
-             days_processed=len(all_daily_data) if isinstance(all_daily_data, list) else len(all_daily_data))
+             total_records=len(data),
+             monthly_records=len(monthly_data) if not monthly_data.empty else 0)
         
     except KeyboardInterrupt:
         warning("Pipeline interrupted by user", component="main")
-        print("Pipeline interrupted by user")
         sys.exit(1)
     except Exception as e:
-        error("Unexpected error in ETL Pipeline", 
+        error(f"Unexpected error in ETL Pipeline {str(e)}", 
               component="main",
               error=str(e))
         sys.exit(1)
