@@ -1,14 +1,15 @@
 import logging
-import socket
 import os
-from typing import Optional, Dict, Any
+import socket
+from typing import Any, Dict, Optional
+
 from dotenv import load_dotenv
 
 # OpenTelemetry imports
 from opentelemetry import _logs
+from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
-from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
 from opentelemetry.sdk.resources import Resource
 
 # Reduce OpenTelemetry exporter logs
@@ -18,7 +19,9 @@ logging.getLogger("opentelemetry.exporter.otlp.proto.grpc.exporter").setLevel(
 
 
 class LoggingManager:
-    """Centralized logging management with file logging and optional SigNoz integration."""
+    """
+    Centralized logging management with file logging and optional SigNoz integration.
+    """
 
     def __init__(
         self,
@@ -83,7 +86,8 @@ class LoggingManager:
         try:
             if not self._is_endpoint_available(self.endpoint):
                 self.logger.warning(
-                    f"SigNoz endpoint {self.endpoint} not available, skipping configuration",
+                    f"SigNoz endpoint {self.endpoint} not available, "
+                    f"skipping configuration",
                     extra={"component": "logging_setup"},
                 )
                 return

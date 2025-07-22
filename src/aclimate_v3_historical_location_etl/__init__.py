@@ -8,14 +8,10 @@ __version__ = "0.1.0"
 __author__ = "CIAT-DAPA"
 __email__ = "info@ciat.cgiar.org"
 
+from .database_manager import DatabaseManager
+
 # Import main modules
 from .geoserver_client import GeoServerClient
-from .database_manager import DatabaseManager
 from .tools.logging_manager import LoggingManager
 
-__all__ = [
-    "GeoServerClient",
-    "ETLError", 
-    "DatabaseManager",
-    "LoggingManager"
-]
+__all__ = ["GeoServerClient", "ETLError", "DatabaseManager", "LoggingManager"]
