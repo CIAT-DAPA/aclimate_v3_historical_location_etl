@@ -1,6 +1,39 @@
 # AClimate v3 Historical Location ETL
 
-ETL para procesamiento de datos históricos de ubicaciones de AClimate v3. test
+ETL para procesamiento de datos históricos de ubicaciones de AClimate v3.
+
+## Características
+
+- **Integración con ORM**: Utiliza `aclimate_v3_orm` para operaciones de base de datos
+- **Schemas tipados**: Todos los datos se manejan a través de schemas ya formateados
+- **Monitoreo con OpenTelemetry**: Integración completa con SigNoz para observabilidad
+- **Pipeline CI/CD**: Automated testing, building, and deployment
+- **Configuración flexible**: Archivo de configuración de entorno completo
+- **Logging estructurado**: Logs detallados para debugging y monitoreo
+
+## Configuración
+
+### Variables de entorno
+
+1. **Copiar el archivo de ejemplo:**
+
+   ```bash
+   cp env.example .env
+   ```
+
+2. **Configurar variables principales:**
+   - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`: Conexión a base de datos
+   - `OTEL_EXPORTER_OTLP_ENDPOINT`: Endpoint de OpenTelemetry para monitoreo
+   - `OTEL_EXPORTER_OTLP_HEADERS`: Token de acceso para SigNoz
+   - `LOG_LEVEL`: Nivel de logging (DEBUG, INFO, WARNING, ERROR)
+
+### Dependencias
+
+El proyecto requiere `aclimate_v3_orm` para operaciones de base de datos:
+
+```bash
+pip install aclimate_v3_orm
+```
 
 ## Instalación
 
