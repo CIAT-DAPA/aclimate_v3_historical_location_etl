@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import json
 from .tools.logging_manager import info, warning, error
+from .tools.tools import DownloadProgressBar
 
 # ORM imports - Required for database operations
 try:
@@ -250,15 +251,19 @@ class DatabaseManager:
         """
         try:
             measures = self.climate_measure_service.get_by_short_name(short_name, enabled=True)
+            
             if measures and len(measures) > 0:
-                return measures[0].id
+                measure_id = measures[0].id
+                return measure_id
             else:
                 warning(f"Climate measure not found for short_name: {short_name}", 
-                       component="database_manager")
+                       component="database_manager",
+                       short_name=short_name)
                 return None
         except Exception as e:
             error(f"Failed to get measure ID for short_name: {short_name}", 
                   component="database_manager",
+                  short_name=short_name,
                   error=str(e))
             return None
     
@@ -287,6 +292,11 @@ class DatabaseManager:
                 measure_id = self.get_measure_id_by_short_name(short_name)
                 if measure_id:
                     measure_mapping[var_name] = measure_id
+                else:
+                    warning(f"No measure ID found for {var_name} (short_name: {short_name})", 
+                           component="database_manager",
+                           variable=var_name,
+                           short_name=short_name)
                     
             info(f"Climate measure mapping loaded", 
                  component="database_manager",
@@ -300,13 +310,72 @@ class DatabaseManager:
                   error=str(e))
             return {}
     
-    def save_extracted_data(self, extracted_data, country: str) -> bool:
+    def get_variable_mapping_from_geoserver_config(self, country: str, geoserver_config: Dict[str, Any]) -> Dict[str, str]:
+        """
+        Get variable mapping from provided GeoServer configuration.
+        Maps config variable names to database measure short names.
+        
+        Args:
+            country: Country name
+            geoserver_config: GeoServer configuration dictionary
+            
+        Returns:
+            Dictionary mapping config variables to measure short names
+        """
+        try:
+            # Extract variable mappings from config
+            variable_mapping = {}
+            
+            # Get country-specific config
+            country_config = geoserver_config.get(country.upper(), {})
+            if not country_config:
+                warning(f"No country configuration found for {country}",
+                       component="database_manager")
+                return {}
+            
+            # Map each variable in config to its database measure
+            for config_var_name, layer_config in country_config.items():
+                # Get the database measure name from layer config or use fallback mapping
+                db_measure = layer_config.get('measure')
+                
+                if not db_measure:
+                    # Fallback mapping for common variables
+                    fallback_mapping = {
+                        'rad': 'sol_rad',
+                        'prec': 'prec',
+                        'tmax': 'tmax',
+                        'tmin': 'tmin',
+                        'precipitation': 'prec',
+                        'temperature_max': 'tmax',
+                        'temperature_min': 'tmin',
+                        'solar_radiation': 'sol_rad'
+                    }
+                    db_measure = fallback_mapping.get(config_var_name, config_var_name)
+                    
+                variable_mapping[config_var_name] = db_measure
+                
+                info(f"Mapped config variable '{config_var_name}' to database measure '{db_measure}'",
+                     component="database_manager",
+                     config_var=config_var_name,
+                     db_measure=db_measure)
+            
+            return variable_mapping
+            
+        except Exception as e:
+            error("Failed to get variable mapping from geoserver config",
+                  component="database_manager",
+                  country=country,
+                  error=str(e))
+            return {}
+    
+    def save_extracted_data(self, extracted_data, country: str, geoserver_config: Dict[str, Any] = None) -> bool:
         """
         Save extracted data from GeoServer to database.
         
         Args:
             extracted_data: DataFrame or data structure from GeoServer extraction
             country: Country name for context
+            geoserver_config: GeoServer configuration dictionary (optional)
             
         Returns:
             True if successful, False otherwise
@@ -318,7 +387,24 @@ class DatabaseManager:
                  total_records=len(extracted_data) if hasattr(extracted_data, '__len__') else 'unknown')
             
             # Get measure mapping
-            measure_mapping = self.get_climate_measure_mapping()
+            if geoserver_config:
+                # Use variable mapping from provided GeoServer configuration
+                variable_mapping = self.get_variable_mapping_from_geoserver_config(country, geoserver_config)
+                if not variable_mapping:
+                    warning("No variable mapping found from config, falling back to default mapping",
+                           component="database_manager")
+                    measure_mapping = self.get_climate_measure_mapping()
+                else:
+                    # Convert variable mapping to measure mapping
+                    measure_mapping = {}
+                    for config_var, db_measure in variable_mapping.items():
+                        measure_id = self.get_measure_id_by_short_name(db_measure)
+                        if measure_id:
+                            measure_mapping[config_var] = measure_id
+            else:
+                # Fallback to default mapping
+                measure_mapping = self.get_climate_measure_mapping()
+                
             if not measure_mapping:
                 error("No climate measure mappings found", component="database_manager")
                 return False
@@ -328,57 +414,87 @@ class DatabaseManager:
                 # Handle DataFrame format
                 saved_count = 0
                 error_count = 0
+                total_rows = len(extracted_data)
                 
-                for index, row in extracted_data.iterrows():
-                    try:
-                        location_id = row.get('location_id')
-                        date = row.get('date')
-                        
-                        if not location_id or not date:
-                            warning(f"Missing location_id or date in row {index}", 
-                                   component="database_manager")
-                            error_count += 1
-                            continue
-                        
-                        # Process each climate variable in the row
-                        climate_variables = {
-                            'tmax': row.get('tmax'),
-                            'tmin': row.get('tmin'),
-                            'prec': row.get('prec'),
-                            'sol_rad': row.get('sol_rad')
-                        }
-                        
-                        for var_name, value in climate_variables.items():
-                            if value is not None and var_name in measure_mapping:
-                                try:
-                                    # Create ClimateHistoricalDailyCreate schema instance
-                                    historical_data = ClimateHistoricalDailyCreate(
-                                        location_id=location_id,
-                                        measure_id=measure_mapping[var_name],
-                                        date=date,
-                                        value=float(value)
-                                    )
-                                    
-                                    # Save using the historical data service
-                                    result = self.historical_data_service.create(historical_data)
-                                    if result:
-                                        saved_count += 1
-                                    else:
-                                        error_count += 1
-                                        
-                                except Exception as var_error:
-                                    error_count += 1
-                                    warning(f"Failed to save {var_name} for row {index}", 
-                                           component="database_manager",
-                                           variable=var_name,
-                                           value=value,
-                                           error=str(var_error))
+                # Initialize progress bar for saving data
+                with DownloadProgressBar(
+                    total=total_rows,
+                    desc=f"Saving climate data for {country}",
+                    unit="rows"
+                ) as pbar:
+                    
+                    for index, row in extracted_data.iterrows():
+                        try:
+                            location_id = row.get('location_id')
+                            date = row.get('date')
                             
-                    except Exception as row_error:
-                        error_count += 1
-                        warning(f"Failed to process row {index}", 
-                               component="database_manager",
-                               error=str(row_error))
+                            if not location_id or not date:
+                                warning(f"Missing location_id or date in row {index}", 
+                                       component="database_manager")
+                                error_count += 1
+                                pbar.update(1)
+                                continue
+                            
+                            # Process each climate variable in the row  
+                            # Use all available columns except metadata columns
+                            metadata_columns = {'location_id', 'location_name', 'latitude', 'longitude', 'date'}
+                            climate_variables = {}
+                            
+                            for column in extracted_data.columns:
+                                if column not in metadata_columns:
+                                    climate_variables[column] = row.get(column)
+                            
+                            for var_name, value in climate_variables.items():
+                                
+                                if value is not None and var_name in measure_mapping:
+                                    try:
+                                        # Additional validation for numerical values
+                                        numeric_value = float(value)
+                                        if str(numeric_value).lower() in ['nan', 'inf', '-inf']:
+                                            warning(f"Invalid numeric value {numeric_value} for {var_name} in row {index}", 
+                                                   component="database_manager",
+                                                   variable=var_name,
+                                                   value=numeric_value)
+                                            continue
+                                        
+                                        # Create ClimateHistoricalDailyCreate schema instance
+                                        historical_data = ClimateHistoricalDailyCreate(
+                                            location_id=location_id,
+                                            measure_id=measure_mapping[var_name],
+                                            date=date,
+                                            value=numeric_value
+                                        )
+                                        
+                                        # Save using the historical data service
+                                        result = self.historical_data_service.create(historical_data)
+                                        if result:
+                                            saved_count += 1
+                                        else:
+                                            error_count += 1
+                                            
+                                    except ValueError as val_error:
+                                        error_count += 1
+                                        warning(f"Invalid value for {var_name} in row {index}: {value}", 
+                                               component="database_manager",
+                                               variable=var_name,
+                                               value=value,
+                                               error=str(val_error))
+                                    except Exception as var_error:
+                                        error_count += 1
+                                        warning(f"Failed to save {var_name} for row {index}", 
+                                               component="database_manager",
+                                               variable=var_name,
+                                               value=value,
+                                               error=str(var_error))
+                                
+                        except Exception as row_error:
+                            error_count += 1
+                            warning(f"Failed to process row {index}", 
+                                   component="database_manager",
+                                   error=str(row_error))
+                        finally:
+                            # Update progress bar
+                            pbar.update(1)
                 
                 info(f"Data saving completed", 
                      component="database_manager",

@@ -170,7 +170,7 @@ def main():
         )
         
         # Save extracted data to database
-        save_success = db_manager.save_extracted_data(data, args.country)
+        save_success = db_manager.save_extracted_data(data, args.country, geoserver_config)
         if not save_success:
             warning("Some errors occurred while saving data to database", 
                    component="main")
