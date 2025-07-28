@@ -1,10 +1,14 @@
+from typing import Optional
+
 from tqdm import tqdm
 
 from .logging_manager import error
 
 
 class DownloadProgressBar(tqdm):
-    def update_to(self, b=1, bsize=1, tsize=None):
+    def update_to(
+        self, b: int = 1, bsize: int = 1, tsize: Optional[int] = None
+    ) -> None:
         """
         Updates the progress bar for file downloads.
 

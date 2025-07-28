@@ -229,7 +229,7 @@ class GeoServerClient:
         location: LocationRead,
         date: datetime,
         country: str,
-        pbar: DownloadProgressBar = None,
+        pbar: Optional[DownloadProgressBar] = None,
     ) -> tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Extract point data for a single location on a specific date.
@@ -296,7 +296,7 @@ class GeoServerClient:
             )
 
     def _extract_daily_data(
-        self, location, date: datetime, country: str
+        self, location: LocationRead, date: datetime, country: str
     ) -> tuple[Dict[str, Any], int]:
         """
         Extract daily data for a location from all configured variables.
@@ -345,7 +345,7 @@ class GeoServerClient:
 
     def _extract_point_value(
         self,
-        location,
+        location: LocationRead,
         date: datetime,
         variable_name: str,
         layer_config: Dict[str, Any],
@@ -458,7 +458,7 @@ class GeoServerClient:
             response.raise_for_status()
 
             # Get content
-            content = response.content
+            content: bytes = response.content
 
             # Validate GeoTIFF header
             if not content.startswith(b"\x49\x49\x2a\x00") and not content.startswith(
@@ -704,8 +704,8 @@ class GeoServerClient:
                 weights.append(weight)
 
             # Calculate weighted average
-            weighted_sum = sum(w * v for w, v in zip(weights, values))
-            total_weight = sum(weights)
+            weighted_sum: float = sum(w * v for w, v in zip(weights, values))
+            total_weight: float = sum(weights)
 
             return weighted_sum / total_weight
 

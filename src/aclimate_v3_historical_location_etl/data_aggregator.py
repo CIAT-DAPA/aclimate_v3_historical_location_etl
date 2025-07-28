@@ -17,7 +17,7 @@ class DataAggregatorError(Exception):
 class DataAggregator:
     """Handles aggregation of daily data to monthly statistics."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize data aggregator."""
         info("Data aggregator initialized", component="data_aggregator")
 

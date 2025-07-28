@@ -33,7 +33,7 @@ except ImportError as e:
 class DatabaseManager:
     """Handles all database operations for the ETL pipeline."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize database manager with required services."""
         self.location_service = MngLocationService()
         self.data_source_service = MngDataSourceService()
@@ -110,7 +110,9 @@ class DatabaseManager:
                 component="database_manager",
                 country=country,
             )
-            locations = self.location_service.get_by_country_name(country)
+            locations: List[LocationRead] = self.location_service.get_by_country_name(
+                country
+            )
 
             info(
                 f"Retrieved {len(locations)} locations from database",
@@ -250,7 +252,7 @@ class DatabaseManager:
                 return None
 
             # Parse JSON content
-            config_content = json.loads(db_config.content)
+            config_content: Dict[str, Any] = json.loads(db_config.content)
 
             info(
                 "GeoServer configuration loaded successfully",
@@ -281,7 +283,7 @@ class DatabaseManager:
             return None
 
     def _get_measure_mapping(
-        self, country: str, geoserver_config: Dict[str, Any] = None
+        self, country: str, geoserver_config: Optional[Dict[str, Any]] = None
     ) -> Dict[str, int]:
         """
         Get measure mapping from geoserver config or fallback to default mapping.
@@ -330,7 +332,7 @@ class DatabaseManager:
             )
 
             if measures and len(measures) > 0:
-                measure_id = measures[0].id
+                measure_id: int = measures[0].id
                 return measure_id
             else:
                 warning(
@@ -353,8 +355,8 @@ class DatabaseManager:
         data: pd.DataFrame,
         country: str,
         data_type: str,
-        service_create_func,
-        schema_class,
+        service_create_func: Any,
+        schema_class: Any,
         measure_mapping: Dict[str, int],
     ) -> bool:
         """
@@ -419,8 +421,8 @@ class DatabaseManager:
         row: pd.Series,
         data_columns: set,
         measure_mapping: Dict[str, int],
-        service_create_func,
-        schema_class,
+        service_create_func: Any,
+        schema_class: Any,
         date_field: str = "date",
     ) -> tuple[int, int]:
         """
@@ -628,7 +630,10 @@ class DatabaseManager:
             return {}
 
     def save_extracted_data(
-        self, extracted_data, country: str, geoserver_config: Dict[str, Any] = None
+        self,
+        extracted_data: Any,
+        country: str,
+        geoserver_config: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """
         Save extracted data from GeoServer to database.
@@ -691,7 +696,7 @@ class DatabaseManager:
         self,
         monthly_data: pd.DataFrame,
         country: str,
-        geoserver_config: Dict[str, Any] = None,
+        geoserver_config: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """
         Save monthly aggregated data to database.

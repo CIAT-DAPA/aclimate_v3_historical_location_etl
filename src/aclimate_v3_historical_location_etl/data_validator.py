@@ -16,7 +16,7 @@ class DataValidator:
     Validates extracted climate data for quality, completeness, and integrity.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the data validator."""
         self.metadata_columns = [
             "location_id",
@@ -88,7 +88,7 @@ class DataValidator:
             warnings.extend(quality_warnings)
 
             # 4. Clean data if requested
-            cleaning_actions = []
+            cleaning_actions: List[str] = []
             if clean_data and not errors:  # Only clean if no critical errors
                 cleaned_df, cleaning_actions = self._clean_data(cleaned_df)
 

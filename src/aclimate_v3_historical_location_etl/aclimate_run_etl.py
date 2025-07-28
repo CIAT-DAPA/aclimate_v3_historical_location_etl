@@ -18,14 +18,14 @@ try:
     from .data_aggregator import DataAggregator
 except ImportError:
 
-    class DataAggregator:
-        def __init__(self):
+    class DataAggregator:  # type: ignore[no-redef]
+        def __init__(self) -> None:
             warning(
                 "DataAggregator module not available, using placeholder",
                 component="main",
             )
 
-        def calculate_monthly_aggregations(self, *args, **kwargs):
+        def calculate_monthly_aggregations(self, *args, **kwargs):  # type: ignore[no-untyped-def]
             warning(
                 "DataAggregator not available - monthly aggregations skipped",
                 component="main",
@@ -38,7 +38,7 @@ except ImportError:
 #   --start_date 2025-04 --end_date 2025-04 --country HONDURAS --all_locations
 
 
-def parse_args():
+def parse_args():  # type: ignore[no-untyped-def]
     """Parse command line arguments for historical location ETL."""
     info("Parsing command line arguments", component="setup")
     parser = argparse.ArgumentParser(
@@ -84,7 +84,7 @@ def parse_args():
     return args
 
 
-def validate_dates(start_date: str, end_date: str):
+def validate_dates(start_date: str, end_date: str):  # type: ignore[no-untyped-def]
     """Validate date format and range, and convert to full date range."""
     try:
         info(
@@ -147,7 +147,7 @@ def setup_directories(data_path: Optional[str], country: str) -> Dict[str, Path]
     return directories
 
 
-def cleanup_temp_files(directories: Dict[str, Path]):
+def cleanup_temp_files(directories: Dict[str, Path]) -> None:
     """Clean up temporary files."""
     if not directories:
         return
@@ -165,7 +165,7 @@ def cleanup_temp_files(directories: Dict[str, Path]):
             )
 
 
-def main():
+def main() -> None:
     """Main ETL pipeline execution."""
     try:
         info("Starting Historical Location ETL Pipeline", component="main")
@@ -195,6 +195,12 @@ def main():
         geoserver_config = db_manager.get_geoserver_config(
             GEOSERVER_CONFIG_NAME, args.country
         )
+        if not geoserver_config:
+            error(
+                f"GeoServer configuration not found for {args.country}",
+                component="main",
+            )
+            return
         geoserver_client = GeoServerClient(geoserver_config)
 
         # Extract data from GeoServer (validation included)
