@@ -3,13 +3,12 @@ import calendar
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
 import pandas as pd
 
-from .climatology_calculator import ClimatologyCalculator
-from .database_manager import DatabaseManager
-from .geoserver_client import GeoServerClient
+from .climate_processing.climatology_calculator import ClimatologyCalculator
+from .data_managment import DatabaseManager, GeoServerClient
 from .tools.logging_manager import error, info, warning
 
 GEOSERVER_CONFIG_NAME = (
@@ -18,7 +17,7 @@ GEOSERVER_CONFIG_NAME = (
 
 
 try:
-    from .data_aggregator import DataAggregator
+    from .climate_processing.data_aggregator import DataAggregator
 except ImportError:
 
     class DataAggregator:  # type: ignore[no-redef]
@@ -67,9 +66,6 @@ def parse_args():  # type: ignore[no-untyped-def]
     )
 
     # Pipeline control flags
-    parser.add_argument(
-        "--data_path", help="Base directory for temporary data (optional)"
-    )
     parser.add_argument(
         "--climatology",
         action="store_true",
@@ -124,35 +120,6 @@ def validate_dates(start_date: str, end_date: str):  # type: ignore[no-untyped-d
         error("Invalid date format", component="validation", error=str(e))
         print(f"ERROR: Invalid date format. Use YYYY-MM. Error: {str(e)}")
         sys.exit(1)
-        sys.exit(1)
-
-
-def setup_directories(data_path: Optional[str], country: str) -> Dict[str, Path]:
-    """Create necessary directory structure if data_path is provided."""
-    if not data_path:
-        return {}
-
-    info(
-        "Setting up directory structure",
-        component="setup",
-        data_path=data_path,
-        country=country,
-    )
-
-    base_path = Path(data_path)
-    directories = {
-        "base": base_path,
-        "country": base_path / country.lower(),
-        "raw": base_path / country.lower() / "raw",
-        "processed": base_path / country.lower() / "processed",
-        "temp": base_path / country.lower() / "temp",
-    }
-
-    for name, path in directories.items():
-        path.mkdir(parents=True, exist_ok=True)
-        info(f"Created directory: {name}", component="setup", path=str(path))
-
-    return directories
 
 
 def cleanup_temp_files(directories: Dict[str, Path]) -> None:

@@ -7,7 +7,7 @@ from typing import Any, Dict, List
 
 from aclimate_v3_orm.schemas import ClimateHistoricalClimatologyCreate
 
-from .tools.logging_manager import error, info
+from ..tools.logging_manager import error, info
 
 
 class ClimatologyError(Exception):

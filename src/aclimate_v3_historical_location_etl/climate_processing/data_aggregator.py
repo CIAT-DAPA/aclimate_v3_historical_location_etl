@@ -5,7 +5,7 @@ This module handles the calculation of monthly statistics from daily point data.
 
 import pandas as pd
 
-from .tools.logging_manager import error, info, warning
+from ..tools.logging_manager import error, info, warning
 
 
 class DataAggregatorError(Exception):

@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 
-from .tools.logging_manager import error, info
+from ..tools.logging_manager import error, info
 
 
 class DataValidator:
