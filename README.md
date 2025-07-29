@@ -1,253 +1,200 @@
-# AClimate v3 Historical Location ETL
+# AClimate V3 Historical Location ETL ⛅️📦
 
-ETL para procesamiento de datos históricos de ubicaciones de AClimate v3. test
+## 🏷️ Version & Tags
 
-## Instalación
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/CIAT-DAPA/aclimate_v3_historical_location_etl)
+![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/CIAT-DAPA/aclimate_v3_historical_location_etl)
 
-### Desde GitHub (recomendado)
+**Tags:** `climate-data`, `etl`, `locations`, `python`, `geoserver`, `historical`, `orm`
+
+## 📌 Introduction
+
+Python package for processing historical climate data for locations with a complete ETL pipeline that includes:
+
+- Data extraction from GeoServer and database
+- Monthly aggregation and climatology calculations
+- ORM integration for database operations
+- Structured logging and OpenTelemetry monitoring
+
+**Key Features:**
+
+- Automated processing of temperature, precipitation, and solar radiation data
+- Flexible configuration for multiple countries and locations
+- End-to-end pipeline from raw data to database
+- Database-backed configuration management
+
+---
+
+## Documentation
+
+For complete documentation, visit the [Project Wiki](https://github.com/CIAT-DAPA/aclimate_v3_historical_location_etl/wiki)
+
+---
+
+## Features
+
+- Modular ETL pipeline for climate data
+- Integration with `aclimate_v3_orm` for database operations
+- Typed schemas for all data
+- OpenTelemetry monitoring (SigNoz ready)
+- CI/CD pipeline (GitHub Actions)
+- Structured logging for debugging and monitoring
+- Flexible configuration via environment and .env files
+
+---
+
+## ✅ Prerequisites
+
+- Python >= 3.10
+- GeoServer
+- PostgreSQL database for configuration storage
+- Dependencies: see `pyproject.toml` or `requirements.txt`
+
+---
+
+## ⚙️ Installation
 
 ```bash
-# Instalación básica
+pip install git+https://github.com/CIAT-DAPA/aclimate_v3_orm
 pip install git+https://github.com/CIAT-DAPA/aclimate_v3_historical_location_etl.git
+```
 
-# Instalación desde una rama específica
-pip install git+https://github.com/CIAT-DAPA/aclimate_v3_historical_location_etl.git@main
+To install a specific version:
 
-# Instalación con dependencias de desarrollo
-pip install "git+https://github.com/CIAT-DAPA/aclimate_v3_historical_location_etl.git[dev]"
-
-# Instalación desde un tag/release específico
+```bash
 pip install git+https://github.com/CIAT-DAPA/aclimate_v3_historical_location_etl.git@v0.1.0
 ```
 
-### Desde el código fuente
+For development (editable mode):
 
 ```bash
-git clone https://github.com/CIAT-DAPA/aclimate_v3_historical_location_etl.git
-cd aclimate_v3_historical_location_etl
-pip install -e .
+pip install -e .[dev]
 ```
 
-### Para desarrollo
+## 📁 Project files included
+
+- `requirements.txt` (all dependencies)
+- `pyproject.toml` (project metadata and dependencies)
+- `dev.py` (utility script for setup, test, build, etc.)
+- `.env.example` (example environment variables)
+
+## 🔧 Configuration
+
+### Environment Variables
+
+You can configure the ETL by creating a `.env` file or setting environment variables:
+
+```ini
+GEOSERVER_URL=http://localhost:8080/geoserver/rest/
+GEOSERVER_USER=admin
+GEOSERVER_PASSWORD=admin
+ENABLE_SIGNOZ=false
+OTLP_ENDPOINT=localhost:4317
+LOG_FILE_PATH=application.log
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/database
+```
+
+> [!NOTE]
+> Options:
+>
+> - `GEOSERVER_URL`: Geoserver URL
+> - `GEOSERVER_USER`: Geoserver user
+> - `GEOSERVER_PASSWORD`: Geoserver password
+> - `OTLP_ENDPOINT`: Signoz endpoint to send logs
+> - `ENABLE_SIGNOZ`: Flag to send logs to signoz
+> - `LOG_FILE_PATH`: Path to save logs
+> - `DATABASE_URL`: Connection string to database
+
+## 🚀 Basic Usage
+
+### 1. Command Line Interface
 
 ```bash
-pip install -e ".[dev]"
+python -m aclimate_v3_historical_location_etl.aclimate_run_etl \
+  --country HONDURAS \
+  --start_date 2025-04 \
+  --end_date 2025-04 \
+  --all_locations
 ```
 
-## Uso
+> [!NOTE]
+> Options:
+>
+> - `--location_ids`: Comma-separated list of location IDs
+> - `--all_locations`: Process all locations
+> - `--climatology`: Calculate monthly climatology
+
+### 2. Programmatic Usage
 
 ```python
-from aclimate_v3_historical_location_etl.tools.logging_manager import LoggingManager
+from aclimate_v3_historical_location_etl.aclimate_run_etl import main as run_etl_pipeline
 
-# Inicializar el logging manager
-log_manager = LoggingManager(
-    service_name="my_etl_service",
-    log_file="my_etl.log"
-)
-
-# Usar el logging
-log_manager.info("Proceso iniciado", component="etl_main")
-log_manager.warning("Advertencia procesando datos", component="data_processor")
-log_manager.error("Error en conexión", component="database", error_code="DB001")
+run_etl_pipeline()
 ```
 
-### Configuración de SigNoz (opcional)
-
-1. Copia el archivo de ejemplo:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Configura las variables en `.env`:
-   ```env
-   ENABLE_SIGNOZ=true
-   OTLP_ENDPOINT=your-signoz-endpoint:4317
-   LOG_FILE_PATH=logs/etl.log
-   ```
-
-## Desarrollo
-
-### 🚀 Configuración inicial
+## 🧪 Running Tests
 
 ```bash
-# Clonar el repositorio
-git clone https://github.com/CIAT-DAPA/aclimate_v3_historical_location_etl.git
-cd aclimate_v3_historical_location_etl
+# Install test requirements
+pip install pytest pytest-mock
 
-# Opción 1: Solo instalar dependencias
-python dev.py install
-
-# Opción 2: Configurar entorno de desarrollo completo
-python dev.py setup
+# Run tests
+pytest tests/
 ```
 
-### 🛠️ Comandos de desarrollo
+## 🔄 CI/CD Pipeline Overview
+
+Our GitHub Actions pipeline implements a three-stage deployment process:
 
 ```bash
-# Instalar solo las dependencias
-python dev.py install
-
-# Configurar entorno completo de desarrollo
-python dev.py setup
-
-# Ejecutar tests
-python dev.py test
-
-# Verificar calidad de código
-python dev.py quality
-
-# Formatear código
-python dev.py format
-
-# Construir paquete
-python dev.py build
-
-# Limpiar archivos generados
-python dev.py clean
+Code Push → Test Stage → Merge Stage → Release Stage
 ```
 
-### 📋 Comandos individuales
+### 1. Test & Validate Phase
+
+- Linting with flake8
+- Formatting with black
+- Type checking with mypy
+- Tests with pytest + coverage
+- Upload to Codecov
+
+### 2. Merge Phase
+
+- Auto-merges `stage` → `main` after successful tests
+
+### 3. Release Phase
+
+- Creates versioned release and uploads artifacts
+
+## 📊 Project Structure
 
 ```bash
-# Tests con coverage
-pytest --cov=src/ --cov-report=html
-
-# Formatear código
-black src/ tests/
-
-# Verificar estilo
-flake8 src/ tests/
-
-# Verificar tipos
-mypy src/
-
-# Pre-commit hooks
-pre-commit run --all-files
+aclimate_v3_historical_location_etl/
+│
+├── .github/
+│   └── workflows/
+├── src/
+│   └── aclimate_v3_historical_location_etl/
+│       ├── climate_processing/
+│       │   ├── climatology_calculator.py
+│       │   └── data_aggregator.py
+│       ├── data_managment/
+│       │   ├── data_validator.py
+│       │   ├── database_manager.py
+│       │   └── geoserver_client.py
+│       ├── tools/
+│       │   ├── logging_manager.py
+│       │   └── tools.py
+│       ├── aclimate_run_etl.py
+│       └── __init__.py
+├── tests/
+├── requirements.txt
+├── pyproject.toml
+├── dev.py
+├── .env.example
+└── README.md
 ```
 
-## Crear distribución
+## Badges
 
-```bash
-python -m build
-```
-
-## Crear un release
-
-1. Actualiza la versión en `pyproject.toml`
-2. Haz commit y push de los cambios
-3. Crea un tag:
-   ```bash
-   git tag v0.1.0
-   git push origin v0.1.0
-   ```
-4. GitHub Actions automáticamente creará el release
-
-## CI/CD Pipeline con GitHub Actions
-
-El proyecto incluye un pipeline moderno de CI/CD que maneja el flujo completo de desarrollo:
-
-### 🔄 Flujo de Branches
-
-```
-develop → PR a stage → stage → main → release
-```
-
-### 📋 Workflows disponibles
-
-#### 1. **Pipeline Principal** (`pipeline.yml`)
-
-Se ejecuta **SOLO** en:
-
-- Pull requests hacia `stage`
-- Push a `stage` (después de merge del PR)
-
-**Fases del Pipeline:**
-
-- **Testing**: Ejecuta en Python 3.10, 3.11, 3.12
-
-  - Linting con flake8
-  - Formateo con black
-  - Type checking con mypy
-  - Tests con pytest + coverage
-  - Upload a Codecov
-
-- **Build**: Construcción del paquete (solo en push a `stage`)
-
-  - Crea distribución con `python -m build`
-  - Valida con twine
-  - Sube artefactos
-
-- **Auto-merge**: `stage` → `main` (automático después de tests exitosos)
-
-#### 2. **Build and Test** (`build.yml`)
-
-Testing continuo para todas las branches principales
-
-#### 3. **Release** (`release.yml`)
-
-- **Auto-release**: Se ejecuta automáticamente en push a `main`
-
-  - Genera tag automáticamente
-  - Actualiza versión en pyproject.toml
-  - Crea release con múltiples formatos
-  - Sube assets (wheel, tar.gz, zip legacy)
-
-- **Manual release**: Para tags manuales
-
-### 🚀 Cómo usar el pipeline
-
-1. **Desarrollo en develop**:
-
-   ```bash
-   git checkout develop
-   git add .
-   git commit -m "feat: nueva funcionalidad"
-   git push origin develop
-   ```
-
-   ⚠️ **Nota**: No se ejecuta ningún pipeline en `develop`
-
-2. **Pull Request a stage**:
-
-   ```bash
-   # Crear PR desde develop hacia stage
-   gh pr create --base stage --head develop --title "Release v1.0.0"
-   ```
-
-   ✅ **Se ejecuta**: Testing en múltiples versiones de Python
-
-3. **Merge del PR a stage**:
-
-   ```bash
-   # Después de aprobar el PR, se hace merge
-   ```
-
-   ✅ **Se ejecuta**: Build + Auto-merge a `main`
-
-4. **Push a main (automático)**:
-
-   ```bash
-   # El pipeline automáticamente hace push a main
-   ```
-
-   ✅ **Se ejecuta**: Auto-release con nuevo tag
-
-5. **Instalación del release**:
-   ```bash
-   pip install git+https://github.com/CIAT-DAPA/aclimate_v3_historical_location_etl.git@v1.0.0
-   ```
-
-### 📊 Badges de estado
-
-Agrega estos badges a tu README:
-
-```markdown
-![Build Status](https://github.com/CIAT-DAPA/aclimate_v3_historical_location_etl/workflows/AClimate%20v3%20Historical%20Location%20ETL%20Pipeline/badge.svg)
 ![Release](https://github.com/CIAT-DAPA/aclimate_v3_historical_location_etl/workflows/Release%20and%20Deploy/badge.svg)
-![Coverage](https://codecov.io/gh/CIAT-DAPA/aclimate_v3_historical_location_etl/branch/main/graph/badge.svg)
-```
-
-## Licencia
-
-MIT License - ver archivo LICENSE para más detalles.
