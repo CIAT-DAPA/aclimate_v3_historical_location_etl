@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import pandas as pd
 
@@ -9,11 +9,15 @@ from .tools.tools import DownloadProgressBar
 # ORM imports - Required for database operations
 try:
     from aclimate_v3_orm.schemas import (
+        ClimateHistoricalClimatologyCreate,
+        ClimateHistoricalClimatologyUpdate,
         ClimateHistoricalDailyCreate,
         ClimateHistoricalMonthlyCreate,
+        ClimateHistoricalMonthlyRead,
         LocationRead,
     )
     from aclimate_v3_orm.services import (
+        ClimateHistoricalClimatologyService,
         ClimateHistoricalDailyService,
         ClimateHistoricalMonthlyService,
         MngClimateMeasureService,
@@ -41,6 +45,7 @@ class DatabaseManager:
         self.historical_data_service = ClimateHistoricalDailyService()
         self.climate_measure_service = MngClimateMeasureService()
         self.historical_monthly_service = ClimateHistoricalMonthlyService()
+        self.climatology_service = ClimateHistoricalClimatologyService()
 
         info("Database manager initialized", component="database_manager")
 
@@ -101,6 +106,78 @@ class DatabaseManager:
                 error=str(e),
             )
             raise Exception(f"Failed to retrieve locations: {str(e)}")
+
+    def get_historical_monthly_by_location_id(
+        self, location_id: int
+    ) -> List[ClimateHistoricalMonthlyRead]:
+        """
+        Retrieve all historical monthly records for a given location (station).
+        """
+        try:
+            # If the ORM service has get_by_location_id, use it directly
+            result = self.historical_monthly_service.get_by_location_id(location_id)
+            return cast(List[ClimateHistoricalMonthlyRead], result)
+        except Exception as e:
+            error(
+                f"Failed to get historical monthly data for location {location_id}",
+                component="database_manager",
+                location_id=location_id,
+                error=str(e),
+            )
+            return []
+
+    def save_or_update_climatology(
+        self, station_id: int, climatology: List[ClimateHistoricalClimatologyCreate]
+    ) -> None:
+        """
+        Save or update the climatology records for a station using the ORM service.
+        Each record is handled by (location_id, measure_id, month).
+        """
+        try:
+            for record in climatology:
+                # Get all climatology records for this station
+                existing_records = self.climatology_service.get_by_location_id(
+                    record.location_id
+                )
+                # Filter for the specific measure and month
+                existing = next(
+                    (
+                        r
+                        for r in existing_records
+                        if r.measure_id == record.measure_id and r.month == record.month
+                    ),
+                    None,
+                )
+                if existing:
+                    # Update existing record
+                    update_obj = ClimateHistoricalClimatologyUpdate(value=record.value)
+                    self.climatology_service.update(existing.id, update_obj)
+                    info(
+                        f"Updated climatology for station {record.location_id}, "
+                        f"measure {record.measure_id}, month {record.month}",
+                        component="database_manager",
+                    )
+                else:
+                    # Create new record
+                    create_obj = ClimateHistoricalClimatologyCreate(
+                        location_id=record.location_id,
+                        measure_id=record.measure_id,
+                        month=record.month,
+                        value=record.value,
+                    )
+                    self.climatology_service.create(obj_in=create_obj)
+                    info(
+                        f"Created new climatology for station {record.location_id}, "
+                        f"measure {record.measure_id}, month {record.month}",
+                        component="database_manager",
+                    )
+        except Exception as e:
+            error(
+                f"Failed to save or update climatology for station {station_id}",
+                component="database_manager",
+                location_id=station_id,
+                error=str(e),
+            )
 
     def get_all_locations(self, country: str) -> List[LocationRead]:
         """Get all locations from database for the country."""

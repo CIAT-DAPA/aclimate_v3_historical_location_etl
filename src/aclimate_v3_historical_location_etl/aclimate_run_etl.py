@@ -5,6 +5,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
 
+import pandas as pd
+
+from .climatology_calculator import ClimatologyCalculator
 from .database_manager import DatabaseManager
 from .geoserver_client import GeoServerClient
 from .tools.logging_manager import error, info, warning
@@ -66,6 +69,11 @@ def parse_args():  # type: ignore[no-untyped-def]
     # Pipeline control flags
     parser.add_argument(
         "--data_path", help="Base directory for temporary data (optional)"
+    )
+    parser.add_argument(
+        "--climatology",
+        action="store_true",
+        help="Calculate and save monthly climatology for processed stations",
     )
 
     args = parser.parse_args()
@@ -165,6 +173,71 @@ def cleanup_temp_files(directories: Dict[str, Path]) -> None:
             )
 
 
+def calculate_and_save_climatologies_from_data(
+    db_manager: DatabaseManager, data: pd.DataFrame
+) -> None:
+    """
+    Calculate and save/update monthly climatology for
+    each station present in the extracted data.
+    Uses all historical monthly data from the database
+    for each station (no reference period filtering).
+
+    Args:
+        db_manager: Instance of DatabaseManager
+        to access database and save climatologies.
+        data: Extracted data (DataFrame or list of dicts)
+        containing at least 'location_id' for each record.
+
+    Returns:
+        None. Climatologies are saved/updated in the database for each station.
+    """
+    info(
+        "Starting monthly climatology calculation for extracted stations",
+        component="main",
+    )
+    climatology_calculator = ClimatologyCalculator()
+
+    # Get unique station IDs from the extracted data
+    if hasattr(data, "location_id"):
+        station_ids = set(int(x) for x in data["location_id"].unique())
+    elif hasattr(data, "__getitem__") and hasattr(data, "__len__"):
+        # Fallback for list of dicts
+        station_ids = set(
+            int(row["location_id"]) for row in data if "location_id" in row
+        )
+    else:
+        warning("Could not determine station IDs from data", component="main")
+        return
+
+    for station_id in station_ids:
+        # Fetch all historical monthly data for the station from the database
+        historical_monthly = db_manager.historical_monthly_service.get_by_location_id(
+            int(station_id)
+        )
+        if not historical_monthly:
+            warning(
+                f"No monthly data found for station {station_id}",
+                component="main",
+            )
+            continue
+        # Convert to list of dicts if needed
+        if hasattr(historical_monthly[0], "model_dump"):
+            historical_monthly = [row.model_dump() for row in historical_monthly]
+        else:
+            historical_monthly = [dict(row) for row in historical_monthly]
+        # Calculate monthly climatology
+        climatology = climatology_calculator.calculate_monthly_climatology(
+            historical_monthly, station_id
+        )
+        # Save or update in the database
+        db_manager.save_or_update_climatology(station_id, climatology)
+
+        info(
+            f"Monthly climatology processed for station {station_id}",
+            component="main",
+        )
+
+
 def main() -> None:
     """Main ETL pipeline execution."""
     try:
@@ -250,6 +323,11 @@ def main() -> None:
                     "All monthly aggregations saved successfully to database",
                     component="main",
                 )
+
+        # If the --climatology flag is set, calculate and save
+        # climatologies for the stations in the extracted data
+        if args.climatology:
+            calculate_and_save_climatologies_from_data(db_manager, data)
 
         info(
             "ETL Pipeline completed successfully",
