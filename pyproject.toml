@@ -8,10 +8,8 @@ version = "0.1.0"
 description = "ETL para procesamiento de datos históricos climaticos para locaciones de AClimate v3"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
-authors = [
-    {name = "Santiago Calderon", email = "s.calderon@cgiar.org"},
-]
+license = { text = "MIT" }
+authors = [{ name = "Santiago Calderon", email = "s.calderon@cgiar.org" }]
 keywords = ["etl", "climate", "data", "historical", "location"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -78,7 +76,7 @@ dependencies = [
     "typing_extensions==4.14.1",
     "urllib3==2.5.0",
     "wrapt==1.17.2",
-    "zipp==3.23.0"
+    "zipp==3.23.0",
 ]
 
 [project.optional-dependencies]
@@ -89,6 +87,7 @@ dev = [
     "flake8>=4.0",
     "mypy>=0.900",
     "toml>=0.10.0",
+    "types-requests>=2.32.0",
 ]
 
 [project.urls]
@@ -133,11 +132,7 @@ markers = [
 [tool.coverage.run]
 source = ["src"]
 branch = true
-omit = [
-    "*/tests/*",
-    "*/test_*",
-    "*/conftest.py",
-]
+omit = ["*/tests/*", "*/test_*", "*/conftest.py"]
 
 [tool.coverage.report]
 precision = 2
