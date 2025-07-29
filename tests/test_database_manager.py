@@ -2,6 +2,14 @@ import unittest
 from unittest.mock import MagicMock
 
 from aclimate_v3_historical_location_etl.data_managment import DatabaseManager
+from aclimate_v3_orm.database.base import create_tables
+
+import pytest
+
+
+@pytest.fixture(scope="module")
+def setup_database():
+    create_tables()
 
 
 class TestDatabaseManager(unittest.TestCase):
