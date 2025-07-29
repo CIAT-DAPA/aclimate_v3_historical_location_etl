@@ -64,7 +64,7 @@ dependencies = [
     "pyflakes==3.4.0",
     "Pygments==2.19.2",
     "pyproject_hooks==1.2.0",
-    "python-dotenv==1.1.0",
+    "python-dotenv==1.1.1",
     "pywin32-ctypes==0.2.3",
     "readme_renderer==44.0",
     "requests==2.32.4",
