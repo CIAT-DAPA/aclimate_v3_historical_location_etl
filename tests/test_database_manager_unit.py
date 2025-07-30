@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock, patch
+from aclimate_v3_orm import create_tables
 
 import pytest
 
@@ -41,7 +42,7 @@ def test_save_or_update_climatology_calls_service(db_manager):
 
 
 def test_get_all_locations_returns_list(db_manager):
-    db_manager.location_service.get_all = MagicMock(return_value=["loc"])
+    db_manager.location_service.get_by_country_name = MagicMock(return_value=["loc"])
     result = db_manager.get_all_locations("HONDURAS")
     assert isinstance(result, list)
 

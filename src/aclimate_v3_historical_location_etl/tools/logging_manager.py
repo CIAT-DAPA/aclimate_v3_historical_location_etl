@@ -25,7 +25,7 @@ class LoggingManager:
 
     def __init__(
         self,
-        service_name: str = "historical_spatial_etl_service",
+        service_name: str = "historical_location_etl_service",
         log_file: Optional[str] = None,
     ):
         load_dotenv()
