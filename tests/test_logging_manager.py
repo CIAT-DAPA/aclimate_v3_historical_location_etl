@@ -3,16 +3,18 @@ Tests para el LoggingManager
 """
 
 import os
+import sys
 import tempfile
 import unittest
-from unittest.mock import patch, MagicMock
-import sys
-import logging
+from unittest.mock import patch
 
-# Agregar el directorio src al path para importar el módulo
+# Configuración de path para imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from aclimate_v3_historical_location_etl.tools.logging_manager import LoggingManager
+# Imports del proyecto (después de configurar path)
+from aclimate_v3_historical_location_etl.tools.logging_manager import (  # noqa: E402
+    LoggingManager,
+)
 
 
 class TestLoggingManager(unittest.TestCase):
