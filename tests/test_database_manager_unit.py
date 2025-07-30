@@ -1,5 +1,4 @@
 from unittest.mock import MagicMock, patch
-from aclimate_v3_orm import create_tables
 
 import pytest
 
