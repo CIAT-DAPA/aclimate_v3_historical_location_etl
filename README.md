@@ -5,7 +5,7 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/CIAT-DAPA/aclimate_v3_historical_location_etl)
 ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/CIAT-DAPA/aclimate_v3_historical_location_etl)
 
-**Tags:** `climate-data`, `etl`, `locations`, `python`, `geoserver`, `historical`, `orm`
+**Tags:** `climate-data`, `etl`, `locations`, `python`, `geoserver`, `historical`, `orm`, `data-processing`
 
 ## 📌 Introduction
 
