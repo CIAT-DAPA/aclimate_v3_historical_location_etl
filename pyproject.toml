@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = [ "setuptools>=61.0", "wheel",]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,149 +8,28 @@ version = "0.1.0"
 description = "ETL para procesamiento de datos históricos climaticos para locaciones de AClimate v3"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
-authors = [{ name = "Santiago Calderon", email = "s.calderon@cgiar.org" }]
-keywords = ["etl", "climate", "data", "historical", "location"]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-]
-dependencies = [
-    "backoff==2.2.1",
-    "backports.tarfile==1.2.0",
-    "certifi==2025.7.14",
-    "charset-normalizer==3.4.2",
-    "click==8.2.1",
-    "colorama==0.4.6",
-    "coverage==7.9.2",
-    "Deprecated==1.2.18",
-    "docutils==0.21.2",
-    "dotenv==0.9.9",
-    "googleapis-common-protos==1.70.0",
-    "grpcio==1.73.1",
-    "id==1.5.0",
-    "idna==3.10",
-    "importlib-metadata==6.11.0",
-    "iniconfig==2.1.0",
-    "jaraco.classes==3.4.0",
-    "jaraco.context==6.0.1",
-    "jaraco.functools==4.2.1",
-    "keyring==25.6.0",
-    "markdown-it-py==3.0.0",
-    "mccabe==0.7.0",
-    "mdurl==0.1.2",
-    "more-itertools==10.7.0",
-    "nh3==0.2.22",
-    "opentelemetry-api==1.22.0",
-    "opentelemetry-distro==0.43b0",
-    "opentelemetry-exporter-otlp==1.22.0",
-    "opentelemetry-exporter-otlp-proto-common==1.22.0",
-    "opentelemetry-exporter-otlp-proto-grpc==1.22.0",
-    "opentelemetry-exporter-otlp-proto-http==1.22.0",
-    "opentelemetry-instrumentation==0.43b0",
-    "opentelemetry-proto==1.22.0",
-    "opentelemetry-sdk==1.22.0",
-    "opentelemetry-semantic-conventions==0.43b0",
-    "packaging==25.0",
-    "pathspec==0.12.1",
-    "platformdirs==4.3.8",
-    "pluggy==1.6.0",
-    "protobuf==4.25.8",
-    "pycodestyle==2.14.0",
-    "pyflakes==3.4.0",
-    "Pygments==2.19.2",
-    "pyproject_hooks==1.2.0",
-    "python-dotenv==1.1.1",
-    "pywin32-ctypes==0.2.3",
-    "readme_renderer==44.0",
-    "requests==2.32.4",
-    "requests-toolbelt==1.0.0",
-    "rfc3986==2.0.0",
-    "rich==14.0.0",
-    "tomli==2.2.1",
-    "twine==6.1.0",
-    "typing_extensions==4.14.1",
-    "urllib3==2.5.0",
-    "wrapt==1.17.2",
-    "zipp==3.23.0",
-]
+keywords = [ "etl", "climate", "data", "historical", "location",]
+classifiers = [ "Development Status :: 3 - Alpha", "Intended Audience :: Developers", "License :: OSI Approved :: MIT License", "Operating System :: OS Independent", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.10",]
+dependencies = [ "backoff==2.2.1", "backports.tarfile==1.2.0", "certifi==2025.7.14", "charset-normalizer==3.4.2", "click==8.2.1", "colorama==0.4.6", "coverage==7.9.2", "Deprecated==1.2.18", "docutils==0.21.2", "dotenv==0.9.9", "googleapis-common-protos==1.70.0", "grpcio==1.73.1", "id==1.5.0", "idna==3.10", "importlib-metadata==6.11.0", "iniconfig==2.1.0", "jaraco.classes==3.4.0", "jaraco.context==6.0.1", "jaraco.functools==4.2.1", "keyring==25.6.0", "markdown-it-py==3.0.0", "mccabe==0.7.0", "mdurl==0.1.2", "more-itertools==10.7.0", "nh3==0.2.22", "opentelemetry-api==1.22.0", "opentelemetry-distro==0.43b0", "opentelemetry-exporter-otlp==1.22.0", "opentelemetry-exporter-otlp-proto-common==1.22.0", "opentelemetry-exporter-otlp-proto-grpc==1.22.0", "opentelemetry-exporter-otlp-proto-http==1.22.0", "opentelemetry-instrumentation==0.43b0", "opentelemetry-proto==1.22.0", "opentelemetry-sdk==1.22.0", "opentelemetry-semantic-conventions==0.43b0", "packaging==25.0", "pathspec==0.12.1", "platformdirs==4.3.8", "pluggy==1.6.0", "protobuf==4.25.8", "pycodestyle==2.14.0", "pyflakes==3.4.0", "Pygments==2.19.2", "pyproject_hooks==1.2.0", "python-dotenv==1.1.1", "pywin32-ctypes==0.2.3", "readme_renderer==44.0", "requests==2.32.4", "requests-toolbelt==1.0.0", "rfc3986==2.0.0", "rich==14.0.0", "tomli==2.2.1", "twine==6.1.0", "typing_extensions==4.14.1", "urllib3==2.5.0", "wrapt==1.17.2", "zipp==3.23.0",]
+[[project.authors]]
+name = "Santiago Calderon"
+email = "s.calderon@cgiar.org"
+
+[project.license]
+text = "MIT"
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=6.0",
-    "pytest-cov>=4.0",
-    "black>=22.0",
-    "flake8>=4.0",
-    "mypy>=0.900",
-    "toml>=0.10.0",
-    "types-requests>=2.32.0",
-]
+dev = [ "pytest>=6.0", "pytest-cov>=4.0", "black>=22.0", "flake8>=4.0", "mypy>=0.900", "toml>=0.10.0", "types-requests>=2.32.0",]
 
 [project.urls]
 Homepage = "https://github.com/CIAT-DAPA/aclimate_v3_historical_location_etl"
 Repository = "https://github.com/CIAT-DAPA/aclimate_v3_historical_location_etl"
 "Bug Tracker" = "https://github.com/CIAT-DAPA/aclimate_v3_historical_location_etl/issues"
 
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.setuptools.package-dir]
-"" = "src"
-
 [tool.black]
 line-length = 88
-target-version = ['py310']
+target-version = [ "py310",]
 
-# Configuración de pytest
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py", "*_test.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = [
-    "--strict-markers",
-    "--strict-config",
-    "--verbose",
-    "--tb=short",
-    "--cov=src",
-    "--cov-report=term-missing",
-    "--cov-report=html",
-    "--cov-report=xml",
-    "--cov-fail-under=40",
-]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests",
-]
-
-# Configuración de coverage
-[tool.coverage.run]
-source = ["src"]
-branch = true
-omit = ["*/tests/*", "*/test_*", "*/conftest.py"]
-
-[tool.coverage.report]
-precision = 2
-show_missing = true
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "if self.debug:",
-    "if settings.DEBUG",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if 0:",
-    "if __name__ == .__main__.:",
-    "class .*\\bProtocol\\):",
-    "@(abc\\.)?abstractmethod",
-]
-
-# Configuración de mypy
 [tool.mypy]
 python_version = "3.10"
 warn_return_any = true
@@ -167,9 +46,32 @@ warn_unreachable = true
 strict_equality = true
 ignore_missing_imports = true
 
-# Configuración de isort (opcional)
 [tool.isort]
 profile = "black"
 multi_line_output = 3
 line_length = 88
-known_first_party = ["aclimate_v3_historical_location_etl"]
+known_first_party = [ "aclimate_v3_historical_location_etl",]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.pytest.ini_options]
+testpaths = [ "tests",]
+python_files = [ "test_*.py", "*_test.py",]
+python_classes = [ "Test*",]
+python_functions = [ "test_*",]
+addopts = [ "--strict-markers", "--strict-config", "--verbose", "--tb=short", "--cov=src", "--cov-report=term-missing", "--cov-report=html", "--cov-report=xml", "--cov-fail-under=40",]
+markers = [ "slow: marks tests as slow (deselect with '-m \"not slow\"')", "integration: marks tests as integration tests", "unit: marks tests as unit tests",]
+
+[tool.coverage.run]
+source = [ "src",]
+branch = true
+omit = [ "*/tests/*", "*/test_*", "*/conftest.py",]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+exclude_lines = [ "pragma: no cover", "def __repr__", "if self.debug:", "if settings.DEBUG", "raise AssertionError", "raise NotImplementedError", "if 0:", "if __name__ == .__main__.:", "class .*\\bProtocol\\):", "@(abc\\.)?abstractmethod",]
+
+[tool.setuptools.packages.find]
+where = [ "src",]
