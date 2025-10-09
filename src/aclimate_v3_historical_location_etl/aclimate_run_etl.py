@@ -8,12 +8,10 @@ from typing import Dict
 import pandas as pd
 
 from .climate_processing.climatology_calculator import ClimatologyCalculator
-from .data_managment import DatabaseManager, GeoServerClient
+from .data_managment import CSVClient, DatabaseManager, GeoServerClient
 from .tools.logging_manager import error, info, warning
 
-GEOSERVER_CONFIG_NAME = (
-    "location_etl_geoserver_config"  # Name of the data source in database
-)
+GEOSERVER_CONFIG_NAME = "location_etl_geoserver_config"
 
 
 try:
@@ -36,8 +34,13 @@ except ImportError:
 
 
 # Example usage:
+# GeoServer mode:
 # python -m src.aclimate_v3_historical_location_etl.aclimate_run_etl \
-#   --start_date 2025-04 --end_date 2025-04 --country HONDURAS --all_locations
+#   --start_date 2025-04 --end_date 2025-04 --country HONDURAS --all_locations --source geoserver
+#
+# CSV mode:
+# python -m src.aclimate_v3_historical_location_etl.aclimate_run_etl \
+#   --start_date 2025-04 --end_date 2025-04 --country HONDURAS --all_locations --source csv --csv_path path\data_test
 
 
 def parse_args():  # type: ignore[no-untyped-def]
@@ -54,6 +57,18 @@ def parse_args():  # type: ignore[no-untyped-def]
     )
     parser.add_argument("--end_date", required=True, help="End date in YYYY-MM format")
 
+    # Data source selection
+    parser.add_argument(
+        "--source",
+        choices=["geoserver", "csv"],
+        default="geoserver",
+        help="Data source: 'geoserver' or 'csv' (default: geoserver)",
+    )
+    parser.add_argument(
+        "--csv_path",
+        help="Path to CSV file (required when --source csv is used)",
+    )
+
     # Location selection (mutually exclusive)
     location_group = parser.add_mutually_exclusive_group()
     location_group.add_argument(
@@ -62,7 +77,7 @@ def parse_args():  # type: ignore[no-untyped-def]
     location_group.add_argument(
         "--all_locations",
         action="store_true",
-        help="Process all locations from database",
+        help="Process all locations (from database for geoserver, from CSV for csv source)",
     )
 
     # Pipeline control flags
@@ -73,6 +88,11 @@ def parse_args():  # type: ignore[no-untyped-def]
     )
 
     args = parser.parse_args()
+
+    # Validate CSV path is provided when source is CSV
+    if args.source == "csv" and not args.csv_path:
+        error("CSV path is required when using CSV source", component="setup")
+        parser.error("--csv_path is required when --source csv is used")
 
     # Default to all locations if no location selection specified
     if not args.location_ids and not args.all_locations:
@@ -231,30 +251,57 @@ def main() -> None:
             args.start_date, args.end_date
         )
 
-        # Initialize database manager and get configuration
-        geoserver_config = db_manager.get_geoserver_config(
-            GEOSERVER_CONFIG_NAME, args.country
-        )
-        if not geoserver_config:
-            error(
-                f"GeoServer configuration not found for {args.country}",
-                component="main",
+        # Extract data based on source type
+        if args.source == "geoserver":
+            info("Using GeoServer as data source", component="main")
+
+            # Get GeoServer configuration
+            geoserver_config = db_manager.get_geoserver_config(
+                GEOSERVER_CONFIG_NAME, args.country
             )
-            return
-        geoserver_client = GeoServerClient(geoserver_config)
+            if not geoserver_config:
+                error(
+                    f"GeoServer configuration not found for {args.country}",
+                    component="main",
+                )
+                return
 
-        # Extract data from GeoServer (validation included)
-        data = geoserver_client.extract_location_data(
-            location_ids=args.location_ids if args.location_ids else "all",
-            country=args.country,
-            start_date=start_date_actual,
-            end_date=end_date_actual,
-        )
+            # Initialize GeoServer client
+            geoserver_client = GeoServerClient(geoserver_config)
 
-        # Save extracted data to database
-        save_success = db_manager.save_extracted_data(
-            data, args.country, geoserver_config
-        )
+            # Extract data from GeoServer (validation included)
+            data = geoserver_client.extract_location_data(
+                location_ids=args.location_ids if args.location_ids else "all",
+                country=args.country,
+                start_date=start_date_actual,
+                end_date=end_date_actual,
+            )
+
+            # Save extracted data to database
+            save_success = db_manager.save_extracted_data(
+                data, args.country, geoserver_config
+            )
+
+        else:  # args.source == "csv"
+            info("Using CSV as data source", component="main", csv_path=args.csv_path)
+
+            # Initialize CSV client
+            csv_client = CSVClient()
+
+            # Extract data from CSV (validation included)
+            data = csv_client.extract_location_data(
+                location_ids=args.location_ids if args.location_ids else "all",
+                country=args.country,
+                start_date=start_date_actual,
+                end_date=end_date_actual,
+                csv_path=args.csv_path,
+            )
+
+            # Save extracted data to database (no geoserver_config for CSV)
+            save_success = db_manager.save_extracted_data(
+                data, args.country, geoserver_config=None
+            )
+        # Check save status
         if not save_success:
             warning(
                 "Some errors occurred while saving data to database", component="main"
@@ -277,8 +324,10 @@ def main() -> None:
 
         # Save monthly data to database
         if not monthly_data.empty:
+            # Use geoserver_config only if source is geoserver
+            config_to_pass = geoserver_config if args.source == "geoserver" else None
             monthly_save_success = db_manager.save_monthly_data(
-                monthly_data, args.country, geoserver_config
+                monthly_data, args.country, config_to_pass
             )
             if not monthly_save_success:
                 warning(
@@ -300,6 +349,7 @@ def main() -> None:
             "ETL Pipeline completed successfully",
             component="main",
             country=args.country,
+            data_source=args.source,
             total_records=len(data),
             monthly_records=len(monthly_data) if not monthly_data.empty else 0,
         )
