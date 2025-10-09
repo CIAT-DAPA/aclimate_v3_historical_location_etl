@@ -1,128 +1,16 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = [ "setuptools>=61.0", "wheel",]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "aclimate-v3-historical-location-etl"
-version = "0.1.1"
+version = "0.1.2"
 description = "ETL para procesamiento de datos históricos climaticos para locaciones de AClimate v3"
 readme = "README.md"
 requires-python = ">=3.10"
-keywords = ["etl", "climate", "data", "historical", "location"]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-]
-dependencies = [
-    "affine==2.4.0",
-    "annotated-types==0.7.0",
-    "attrs==25.3.0",
-    "backoff==2.2.1",
-    "backports.tarfile==1.2.0",
-    "black==25.1.0",
-    "build==1.2.2.post1",
-    "certifi==2025.7.14",
-    "charset-normalizer==3.4.2",
-    "click==8.2.1",
-    "click-plugins==1.1.1.2",
-    "cligj==0.7.2",
-    "colorama==0.4.6",
-    "contourpy==1.3.2",
-    "coverage==7.9.2",
-    "cycler==0.12.1",
-    "Deprecated==1.2.18",
-    "docutils==0.21.2",
-    "exceptiongroup==1.3.0",
-    "fiona==1.10.1",
-    "flake8==7.3.0",
-    "fonttools==4.59.0",
-    "geopandas==1.1.1",
-    "googleapis-common-protos==1.70.0",
-    "greenlet==3.2.3",
-    "grpcio==1.73.1",
-    "id==1.5.0",
-    "idna==3.10",
-    "importlib-metadata==6.11.0",
-    "iniconfig==2.1.0",
-    "isort==6.0.1",
-    "jaraco.classes==3.4.0",
-    "jaraco.context==6.0.1",
-    "jaraco.functools==4.2.1",
-    "keyring==25.6.0",
-    "kiwisolver==1.4.8",
-    "markdown-it-py==3.0.0",
-    "matplotlib==3.10.3",
-    "mccabe==0.7.0",
-    "mdurl==0.1.2",
-    "more-itertools==10.7.0",
-    "mypy==1.17.0",
-    "mypy_extensions==1.1.0",
-    "nh3==0.2.22",
-    "numpy==2.2.6",
-    "opentelemetry-api==1.22.0",
-    "opentelemetry-distro==0.43b0",
-    "opentelemetry-exporter-otlp==1.22.0",
-    "opentelemetry-exporter-otlp-proto-common==1.22.0",
-    "opentelemetry-exporter-otlp-proto-grpc==1.22.0",
-    "opentelemetry-exporter-otlp-proto-http==1.22.0",
-    "opentelemetry-instrumentation==0.43b0",
-    "opentelemetry-proto==1.22.0",
-    "opentelemetry-sdk==1.22.0",
-    "opentelemetry-semantic-conventions==0.43b0",
-    "packaging==25.0",
-    "pandas==2.3.1",
-    "pathspec==0.12.1",
-    "pillow==11.3.0",
-    "platformdirs==4.3.8",
-    "pluggy==1.6.0",
-    "protobuf==4.25.8",
-    "psycopg2==2.9.10",
-    "pyarrow==21.0.0",
-    "pycodestyle==2.14.0",
-    "pydantic==2.11.4",
-    "pydantic_core==2.33.2",
-    "pyflakes==3.4.0",
-    "Pygments==2.19.2",
-    "pyogrio==0.11.0",
-    "pyparsing==3.2.3",
-    "pyproj==3.7.1",
-    "pyproject_hooks==1.2.0",
-    "pytest==8.4.1",
-    "pytest-cov==6.2.1",
-    "python-dateutil==2.9.0.post0",
-    "python-dotenv==1.1.1",
-    "pytz==2025.2",
-    "pywin32-ctypes==0.2.3",
-    "rasterio==1.4.3",
-    "readme_renderer==44.0",
-    "requests==2.32.4",
-    "requests-toolbelt==1.0.0",
-    "rfc3986==2.0.0",
-    "rich==14.0.0",
-    "rioxarray==0.19.0",
-    "rtree==1.4.0",
-    "scipy==1.15.3",
-    "seaborn==0.13.2",
-    "shapely==2.1.1",
-    "six==1.17.0",
-    "SQLAlchemy==2.0.41",
-    "toml==0.10.2",
-    "tomli==2.2.1",
-    "tqdm==4.67.1",
-    "twine==6.1.0",
-    "types-requests==2.32.4.20250611",
-    "typing-inspection==0.4.1",
-    "typing_extensions==4.14.1",
-    "tzdata==2025.2",
-    "urllib3==2.5.0",
-    "wrapt==1.17.2",
-    "xarray==2025.6.1",
-    "zipp==3.23.0",
-]
+keywords = [ "etl", "climate", "data", "historical", "location",]
+classifiers = [ "Development Status :: 3 - Alpha", "Intended Audience :: Developers", "License :: OSI Approved :: MIT License", "Operating System :: OS Independent", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.10",]
+dependencies = [ "affine==2.4.0", "annotated-types==0.7.0", "attrs==25.3.0", "backoff==2.2.1", "backports.tarfile==1.2.0", "black==25.1.0", "build==1.2.2.post1", "certifi==2025.7.14", "charset-normalizer==3.4.2", "click==8.2.1", "click-plugins==1.1.1.2", "cligj==0.7.2", "colorama==0.4.6", "contourpy==1.3.2", "coverage==7.9.2", "cycler==0.12.1", "Deprecated==1.2.18", "docutils==0.21.2", "exceptiongroup==1.3.0", "fiona==1.10.1", "flake8==7.3.0", "fonttools==4.59.0", "geopandas==1.1.1", "googleapis-common-protos==1.70.0", "greenlet==3.2.3", "grpcio==1.73.1", "id==1.5.0", "idna==3.10", "importlib-metadata==6.11.0", "iniconfig==2.1.0", "isort==6.0.1", "jaraco.classes==3.4.0", "jaraco.context==6.0.1", "jaraco.functools==4.2.1", "keyring==25.6.0", "kiwisolver==1.4.8", "markdown-it-py==3.0.0", "matplotlib==3.10.3", "mccabe==0.7.0", "mdurl==0.1.2", "more-itertools==10.7.0", "mypy==1.17.0", "mypy_extensions==1.1.0", "nh3==0.2.22", "numpy==2.2.6", "opentelemetry-api==1.22.0", "opentelemetry-distro==0.43b0", "opentelemetry-exporter-otlp==1.22.0", "opentelemetry-exporter-otlp-proto-common==1.22.0", "opentelemetry-exporter-otlp-proto-grpc==1.22.0", "opentelemetry-exporter-otlp-proto-http==1.22.0", "opentelemetry-instrumentation==0.43b0", "opentelemetry-proto==1.22.0", "opentelemetry-sdk==1.22.0", "opentelemetry-semantic-conventions==0.43b0", "packaging==25.0", "pandas==2.3.1", "pathspec==0.12.1", "pillow==11.3.0", "platformdirs==4.3.8", "pluggy==1.6.0", "protobuf==4.25.8", "psycopg2==2.9.10", "pyarrow==21.0.0", "pycodestyle==2.14.0", "pydantic==2.11.4", "pydantic_core==2.33.2", "pyflakes==3.4.0", "Pygments==2.19.2", "pyogrio==0.11.0", "pyparsing==3.2.3", "pyproj==3.7.1", "pyproject_hooks==1.2.0", "pytest==8.4.1", "pytest-cov==6.2.1", "python-dateutil==2.9.0.post0", "python-dotenv==1.1.1", "pytz==2025.2", "pywin32-ctypes==0.2.3", "rasterio==1.4.3", "readme_renderer==44.0", "requests==2.32.4", "requests-toolbelt==1.0.0", "rfc3986==2.0.0", "rich==14.0.0", "rioxarray==0.19.0", "rtree==1.4.0", "scipy==1.15.3", "seaborn==0.13.2", "shapely==2.1.1", "six==1.17.0", "SQLAlchemy==2.0.41", "toml==0.10.2", "tomli==2.2.1", "tqdm==4.67.1", "twine==6.1.0", "types-requests==2.32.4.20250611", "typing-inspection==0.4.1", "typing_extensions==4.14.1", "tzdata==2025.2", "urllib3==2.5.0", "wrapt==1.17.2", "xarray==2025.6.1", "zipp==3.23.0",]
 [[project.authors]]
 name = "Santiago Calderon"
 email = "s.calderon@cgiar.org"
@@ -131,15 +19,7 @@ email = "s.calderon@cgiar.org"
 text = "MIT"
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=6.0",
-    "pytest-cov>=4.0",
-    "black>=22.0",
-    "flake8>=4.0",
-    "mypy>=0.900",
-    "toml>=0.10.0",
-    "types-requests>=2.32.0",
-]
+dev = [ "pytest>=6.0", "pytest-cov>=4.0", "black>=22.0", "flake8>=4.0", "mypy>=0.900", "toml>=0.10.0", "types-requests>=2.32.0",]
 
 [project.urls]
 Homepage = "https://github.com/CIAT-DAPA/aclimate_v3_historical_location_etl"
@@ -148,7 +28,7 @@ Repository = "https://github.com/CIAT-DAPA/aclimate_v3_historical_location_etl"
 
 [tool.black]
 line-length = 88
-target-version = ["py310"]
+target-version = [ "py310",]
 
 [tool.mypy]
 python_version = "3.10"
@@ -170,53 +50,28 @@ ignore_missing_imports = true
 profile = "black"
 multi_line_output = 3
 line_length = 88
-known_first_party = ["aclimate_v3_historical_location_etl"]
+known_first_party = [ "aclimate_v3_historical_location_etl",]
 
 [tool.setuptools.package-dir]
 "" = "src"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py", "*_test.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = [
-    "--strict-markers",
-    "--strict-config",
-    "--verbose",
-    "--tb=short",
-    "--cov=src",
-    "--cov-report=term-missing",
-    "--cov-report=html",
-    "--cov-report=xml",
-    "--cov-fail-under=30",
-]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests",
-]
+testpaths = [ "tests",]
+python_files = [ "test_*.py", "*_test.py",]
+python_classes = [ "Test*",]
+python_functions = [ "test_*",]
+addopts = [ "--strict-markers", "--strict-config", "--verbose", "--tb=short", "--cov=src", "--cov-report=term-missing", "--cov-report=html", "--cov-report=xml", "--cov-fail-under=30",]
+markers = [ "slow: marks tests as slow (deselect with '-m \"not slow\"')", "integration: marks tests as integration tests", "unit: marks tests as unit tests",]
 
 [tool.coverage.run]
-source = ["src"]
+source = [ "src",]
 branch = true
-omit = ["*/tests/*", "*/test_*", "*/conftest.py"]
+omit = [ "*/tests/*", "*/test_*", "*/conftest.py",]
 
 [tool.coverage.report]
 precision = 2
 show_missing = true
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "if self.debug:",
-    "if settings.DEBUG",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if 0:",
-    "if __name__ == .__main__.:",
-    "class .*\\bProtocol\\):",
-    "@(abc\\.)?abstractmethod",
-]
+exclude_lines = [ "pragma: no cover", "def __repr__", "if self.debug:", "if settings.DEBUG", "raise AssertionError", "raise NotImplementedError", "if 0:", "if __name__ == .__main__.:", "class .*\\bProtocol\\):", "@(abc\\.)?abstractmethod",]
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = [ "src",]
