@@ -11,7 +11,7 @@
 
 Python package for processing historical climate data for locations with a complete ETL pipeline that includes:
 
-- Data extraction from GeoServer and database
+- Data extraction from GeoServer, CSV files, or database
 - Monthly aggregation and climatology calculations
 - ORM integration for database operations
 - Structured logging and OpenTelemetry monitoring
@@ -22,6 +22,7 @@ Python package for processing historical climate data for locations with a compl
 - Flexible configuration for multiple countries and locations
 - End-to-end pipeline from raw data to database
 - Database-backed configuration management
+- Multiple data sources: GeoServer or CSV import
 
 ---
 
@@ -109,20 +110,76 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/database
 
 ### 1. Command Line Interface
 
+#### GeoServer Mode (default)
+
 ```bash
 python -m aclimate_v3_historical_location_etl.aclimate_run_etl \
   --country HONDURAS \
   --start_date 2025-04 \
   --end_date 2025-04 \
-  --all_locations
+  --all_locations \
+  --source geoserver
+```
+
+#### CSV Import Mode
+
+```bash
+# Path to directory containing multiple CSV files (tmax_daily_data.csv, tmin_daily_data.csv, etc.)
+python -m aclimate_v3_historical_location_etl.aclimate_run_etl \
+  --country HONDURAS \
+  --start_date 2025-04 \
+  --end_date 2025-04 \
+  --all_locations \
+  --source csv \
+  --csv_path /path/to/csv_directory/
+
+# Or path to a single CSV file
+python -m aclimate_v3_historical_location_etl.aclimate_run_etl \
+  --country HONDURAS \
+  --start_date 2025-04 \
+  --end_date 2025-04 \
+  --all_locations \
+  --source csv \
+  --csv_path /path/to/single_file.csv
+```
+
+#### Process Specific Locations
+
+```bash
+# GeoServer mode
+python -m aclimate_v3_historical_location_etl.aclimate_run_etl \
+  --country HONDURAS \
+  --start_date 2025-04 \
+  --end_date 2025-04 \
+  --location_ids 1,2,3,4 \
+  --source geoserver
+
+# CSV mode (directory with multiple variable CSVs)
+python -m aclimate_v3_historical_location_etl.aclimate_run_etl \
+  --country HONDURAS \
+  --start_date 2025-04 \
+  --end_date 2025-04 \
+  --location_ids 1,2,3,4 \
+  --source csv \
+  --csv_path /path/to/csv_directory/
 ```
 
 > [!NOTE]
 > Options:
 >
+> - `--source`: Data source (`geoserver` or `csv`, default: `geoserver`)
+> - `--csv_path`: Path to CSV file (required when `--source csv`)
 > - `--location_ids`: Comma-separated list of location IDs
-> - `--all_locations`: Process all locations
+> - `--all_locations`: Process all locations (from database for geoserver, from CSV for csv)
 > - `--climatology`: Calculate monthly climatology
+
+> [!IMPORTANT] > **Location Selection Behavior:**
+>
+> - **GeoServer mode with `--all_locations`**: Processes all locations from database
+> - **CSV mode with `--all_locations`**: Processes all locations found in the CSV file
+> - **CSV mode with `--location_ids`**: Validates IDs exist in database, then filters CSV data
+>
+> **CSV Format:** Files should be named `(variable)_daily_data.csv` (e.g., `tmax_daily_data.csv`, `prec_daily_data.csv`) with columns: `ext_id` (or `id`), `day`, `month`, `year`, `value`. Uses PyArrow engine for fast reading.
 
 ### 2. Programmatic Usage
 
@@ -179,6 +236,7 @@ aclimate_v3_historical_location_etl/
 │       │   ├── climatology_calculator.py
 │       │   └── data_aggregator.py
 │       ├── data_managment/
+│       │   ├── csv_client.py          # NEW: CSV import functionality
 │       │   ├── data_validator.py
 │       │   ├── database_manager.py
 │       │   └── geoserver_client.py

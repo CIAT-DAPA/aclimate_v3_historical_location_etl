@@ -601,11 +601,12 @@ class DatabaseManager:
                 "tmax": "tmax",
                 "tmin": "tmin",
                 "prec": "prec",
-                "sol_rad": "sol_rad",
+                "sol_rad": "srad",
                 "temperature_max": "tmax",
                 "temperature_min": "tmin",
                 "precipitation": "prec",
-                "solar_radiation": "sol_rad",
+                "solar_radiation": "srad",
+                "srad": "srad",
             }
 
             measure_mapping = {}
