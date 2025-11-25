@@ -51,7 +51,11 @@ class CSVClient:
             DataFrame with extracted data in the same format as GeoServerClient
         """
         try:
-            date_range_msg = "all dates from CSV" if start_date is None or end_date is None else f"{start_date} to {end_date}"
+            date_range_msg = (
+                "all dates from CSV"
+                if start_date is None or end_date is None
+                else f"{start_date} to {end_date}"
+            )
             info(
                 f"Starting CSV data extraction for {date_range_msg}",
                 component="csv_client",
@@ -116,10 +120,13 @@ class CSVClient:
             if start_date is not None and end_date is not None:
                 original_count = len(combined_df)
                 combined_df = combined_df[
-                    (combined_df["date"] >= start_date) & (combined_df["date"] <= end_date)
+                    (combined_df["date"] >= start_date)
+                    & (combined_df["date"] <= end_date)
                 ]
                 info(
-                    f"Filtered data by date range {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}: {len(combined_df)} rows remaining (from {original_count})",
+                    f"Filtered data by date range {start_date.strftime('%Y-%m-%d')} to "
+                    f"{end_date.strftime('%Y-%m-%d')}: {len(combined_df)} rows remaining "
+                    f"(from {original_count})",
                     component="csv_client",
                 )
 
@@ -134,7 +141,8 @@ class CSVClient:
                 min_date = combined_df["date"].min()
                 max_date = combined_df["date"].max()
                 info(
-                    f"Using all dates from CSV: {len(combined_df)} rows from {min_date.strftime('%Y-%m-%d')} to {max_date.strftime('%Y-%m-%d')}",
+                    f"Using all dates from CSV: {len(combined_df)} rows from "
+                    f"{min_date.strftime('%Y-%m-%d')} to {max_date.strftime('%Y-%m-%d')}",
                     component="csv_client",
                 )
                 # Set start_date and end_date for validation purposes
@@ -408,20 +416,22 @@ class CSVClient:
 
             # Debug: Check data types and sample values
             info(
-                f"DataFrame ext_id dtype: {df['ext_id'].dtype}, sample values: {df['ext_id'].unique()[:5].tolist()}",
+                f"DataFrame ext_id dtype: {df['ext_id'].dtype}, "
+                f"sample values: {df['ext_id'].unique()[:5].tolist()}",
                 component="csv_client",
             )
             info(
-                f"Location mapping keys type: {type(list(location_mapping.keys())[0])}, sample keys: {list(location_mapping.keys())[:5]}",
+                f"Location mapping keys type: {type(list(location_mapping.keys())[0])}, "
+                f"sample keys: {list(location_mapping.keys())[:5]}",
                 component="csv_client",
             )
-            
+
             # Ensure ext_id column is string type to match mapping keys
             df["ext_id"] = df["ext_id"].astype(str)
-            
+
             # Add location_id to dataframe
             df["location_id"] = df["ext_id"].map(location_mapping)
-            
+
             # Debug: Check mapping results
             info(
                 f"Location mapping results - Unique values: {df['location_id'].unique()[:10].tolist()}",
@@ -431,7 +441,7 @@ class CSVClient:
                 f"Number of successful mappings: {df['location_id'].notna().sum()} out of {len(df)}",
                 component="csv_client",
             )
-            
+
             # Remove rows where location_id is null (no match in database)
             df = df.dropna(subset=["location_id"]).copy()
             df["location_id"] = df["location_id"].astype(int)
@@ -606,10 +616,10 @@ class CSVClient:
             all_locations = self.db_manager.get_all_locations(country)
             # Build mapping for ext_ids present in CSV
             mapping = {}
-            
+
             # Convert ext_ids to strings for consistent comparison
             ext_ids_str = [str(eid).strip() for eid in ext_ids]
-            
+
             for location in all_locations:
                 if location.ext_id:
                     location_ext_id_str = str(location.ext_id).strip()
@@ -617,7 +627,8 @@ class CSVClient:
                         mapping[location_ext_id_str] = location.id
 
             info(
-                f"Created ext_id to location_id mapping: {len(mapping)} matches out of {len(ext_ids_str)} requested ext_ids",
+                f"Created ext_id to location_id mapping: {len(mapping)} matches "
+                f"out of {len(ext_ids_str)} requested ext_ids",
                 component="csv_client",
                 mapping_preview=dict(list(mapping.items())[:5]) if mapping else {},
             )
