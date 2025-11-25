@@ -56,18 +56,18 @@ def parse_args():  # type: ignore[no-untyped-def]
 
     # Required arguments
     parser.add_argument("--country", required=True, help="Country name for processing")
-    
+
     # Date arguments (either date range or all dates)
     parser.add_argument(
         "--date_range",
         nargs=2,
         metavar=("START_DATE", "END_DATE"),
-        help="Date range in YYYY-MM format (e.g., --date_range 2025-01 2025-12)"
+        help="Date range in YYYY-MM format (e.g., --date_range 2025-01 2025-12)",
     )
     parser.add_argument(
         "--all_dates",
         action="store_true",
-        help="Use all dates available in the data source (CSV only)"
+        help="Use all dates available in the data source (CSV only)",
     )
 
     # Data source selection
@@ -113,7 +113,7 @@ def parse_args():  # type: ignore[no-untyped-def]
     if args.source == "csv" and not args.csv_path:
         error("CSV path is required when using CSV source", component="setup")
         parser.error("--csv_path is required when --source csv is used")
-    
+
     # Validate all_dates flag is only used with CSV source
     if args.all_dates and args.source != "csv":
         error("--all_dates flag can only be used with CSV source", component="setup")
@@ -135,24 +135,27 @@ def parse_args():  # type: ignore[no-untyped-def]
 
 def validate_dates(date_range=None, all_dates=False):  # type: ignore[no-untyped-def]
     """Validate date format and range, and convert to full date range.
-    
+
     Args:
         date_range: Tuple of (start_date, end_date) strings in YYYY-MM format, or None
         all_dates: Boolean indicating if all dates should be used
-    
+
     Returns:
         Tuple of (start_date, end_date) datetime objects, or (None, None) if all_dates=True
     """
     if all_dates:
         info("Using all dates from data source", component="validation")
         return None, None
-    
+
     if not date_range or len(date_range) != 2:
-        error("Date range must be provided when not using --all_dates", component="validation")
+        error(
+            "Date range must be provided when not using --all_dates",
+            component="validation",
+        )
         sys.exit(1)
-    
+
     start_date, end_date = date_range
-    
+
     try:
         info(
             "Validating date range",
@@ -291,8 +294,7 @@ def main() -> None:
 
         # Validate and convert dates
         start_date_actual, end_date_actual = validate_dates(
-            date_range=args.date_range,
-            all_dates=args.all_dates
+            date_range=args.date_range, all_dates=args.all_dates
         )
 
         # Extract data based on source type
