@@ -90,17 +90,22 @@ class DataAggregator:
             # Prepare aggregation dictionary based on variable type
             agg_dict = {}
             for col in climate_columns:
-                # Precipitation variables should be summed (accumulated)
-                if "prec" in col.lower() or "precipitation" in col.lower():
+                # Precipitation, evaporation and evapotranspiration variables should be summed (accumulated)
+                if (
+                    "prec" in col.lower()
+                    or "precipitation" in col.lower()
+                    or "et0" in col.lower()
+                    or "evap" in col.lower()
+                ):
                     agg_dict[col] = "sum"
                     info(
-                        f"Using SUM aggregation for precipitation variable: {col}",
+                        f"Using SUM aggregation for accumulative variable: {col}",
                         component="data_aggregator",
                         variable=col,
                         aggregation_type="sum",
                     )
                 else:
-                    # Temperature, radiation, etc. should be averaged
+                    # Temperature, radiation, humidity, cloud cover, etc. should be averaged
                     agg_dict[col] = "mean"
                     info(
                         f"Using MEAN aggregation for variable: {col}",
