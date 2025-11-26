@@ -324,6 +324,7 @@ def main() -> None:
             )
 
             # Save extracted data to database
+            info(f"Saving {len(data)} daily records to database...", component="main")
             save_success = db_manager.save_extracted_data(
                 data, args.country, geoserver_config
             )
@@ -344,16 +345,21 @@ def main() -> None:
             )
 
             # Save extracted data to database (no geoserver_config for CSV)
+            info(f"Saving {len(data)} daily records to database...", component="main")
             save_success = db_manager.save_extracted_data(
                 data, args.country, geoserver_config=None
             )
         # Check save status
         if not save_success:
             warning(
-                "Some errors occurred while saving data to database", component="main"
+                "Some errors occurred while saving daily data to database",
+                component="main",
             )
         else:
-            info("All extracted data saved successfully to database", component="main")
+            info(
+                f"All {len(data)} daily records saved successfully to database",
+                component="main",
+            )
 
         # Data extraction and validation completed successfully
         info(
@@ -372,6 +378,10 @@ def main() -> None:
         if not monthly_data.empty:
             # Use geoserver_config only if source is geoserver
             config_to_pass = geoserver_config if args.source == "geoserver" else None
+            info(
+                f"Saving {len(monthly_data)} monthly records to database...",
+                component="main",
+            )
             monthly_save_success = db_manager.save_monthly_data(
                 monthly_data, args.country, config_to_pass
             )
@@ -382,7 +392,7 @@ def main() -> None:
                 )
             else:
                 info(
-                    "All monthly aggregations saved successfully to database",
+                    f"All {len(monthly_data)} monthly aggregations saved successfully to database",
                     component="main",
                 )
 
@@ -396,8 +406,16 @@ def main() -> None:
             component="main",
             country=args.country,
             data_source=args.source,
-            total_records=len(data),
-            monthly_records=len(monthly_data) if not monthly_data.empty else 0,
+            daily_records_processed=len(data),
+            daily_records_saved=len(data) if save_success else 0,
+            monthly_records_processed=(
+                len(monthly_data) if not monthly_data.empty else 0
+            ),
+            monthly_records_saved=(
+                len(monthly_data)
+                if not monthly_data.empty and monthly_save_success
+                else 0
+            ),
         )
 
     except KeyboardInterrupt:

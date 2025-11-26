@@ -607,6 +607,13 @@ class DatabaseManager:
                 "precipitation": "prec",
                 "solar_radiation": "srad",
                 "srad": "srad",
+                "cmax": "cmax",
+                "cmean": "cmean",
+                "cmin": "cmin",
+                "evap": "et0",
+                "et0": "et0",
+                "hrmax": "hrmax",
+                "hrmin": "hrmin",
             }
 
             measure_mapping = {}
@@ -628,7 +635,6 @@ class DatabaseManager:
                 component="database_manager",
                 mappings_count=len(measure_mapping),
             )
-
             return measure_mapping
 
         except Exception as e:
