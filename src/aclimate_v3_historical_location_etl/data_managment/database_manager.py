@@ -599,6 +599,7 @@ class DatabaseManager:
             # Common climate variable mappings
             variable_mappings = {
                 "tmax": "tmax",
+                "tmed": "tmed",
                 "tmin": "tmin",
                 "prec": "prec",
                 "sol_rad": "srad",
