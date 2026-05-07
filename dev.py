@@ -30,7 +30,7 @@ def setup_dev_environment():
     
     commands = [
         ("python -m pip install --upgrade pip", "Actualizando pip"),
-        ("pip install -e .", "Instalando paquete con dependencias básicas"),
+        ("pip install -e .", "Instalando paquete con dependencias básicas."),
         ("pip install -e .[dev]", "Instalando dependencias de desarrollo"),
         ("pre-commit install", "Instalando pre-commit hooks"),
     ]
