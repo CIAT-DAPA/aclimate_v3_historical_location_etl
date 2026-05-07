@@ -25,16 +25,18 @@ before this calculator is invoked.
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, timedelta
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-
 from aclimate_v3_orm.enums import Period
 from aclimate_v3_orm.schemas import ClimateHistoricalIndicatorCreate
-from aclimate_v3_orm.services import ClimateHistoricalIndicatorService, MngIndicatorService
+from aclimate_v3_orm.services import (
+    ClimateHistoricalIndicatorService,
+    MngIndicatorService,
+)
 
-from ....tools.logging_manager import error, info, warning
+from ....tools.logging_manager import info, warning
 from ..base_calculator import BaseIndicatorCalculator
 from ..data_fetcher import IndicatorDataFetcher
 
@@ -46,8 +48,8 @@ _NORM_START = 1991
 _NORM_END = 2020
 
 # Search window: May 1 – Nov 30
-_SEARCH_START_MONTH = 5   # May
-_SEARCH_END_MONTH = 11    # November
+_SEARCH_START_MONTH = 5  # May
+_SEARCH_END_MONTH = 11  # November
 
 
 def _is_leap(year: int) -> bool:
@@ -76,10 +78,16 @@ class IELSCalculator(BaseIndicatorCalculator):
     SUPPORTED_TEMPORALITIES = ["annual"]
     SECONDARY_CODES = ["IELS-Anomalie", "IELS-decade"]
 
-    def __init__(self, indicator_config, start_date, end_date, country_code):
+    def __init__(
+        self,
+        indicator_config: Dict[str, Any],
+        start_date: str,
+        end_date: str,
+        country_code: str,
+    ) -> None:
         super().__init__(indicator_config, start_date, end_date, country_code)
         self._max_workers = int(os.getenv("MAX_PARALLEL_WORKERS", 4))
-        self._indicator_meta: Dict[str, object] = {}
+        self._indicator_meta: Dict[str, Any] = {}
         self._norm_jstar: Dict[int, float] = {}
         self._resolve_sub_indicators()
 
@@ -152,9 +160,7 @@ class IELSCalculator(BaseIndicatorCalculator):
 
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
             futures = {
-                executor.submit(
-                    self._process_year, year, yearly_data.get(year)
-                ): year
+                executor.submit(self._process_year, year, yearly_data.get(year)): year
                 for year in target_years
             }
             for future in as_completed(futures):
@@ -272,8 +278,8 @@ class IELSCalculator(BaseIndicatorCalculator):
         NaN values are treated as 0 mm (dry day, contributes to DSC).
         Returns None if no qualifying day exists in the search window.
         """
-        search_start = _may_1_julian(year) - 1    # 0-based index
-        search_end = _nov_30_julian(year) - 1      # 0-based index (inclusive)
+        search_start = _may_1_julian(year) - 1  # 0-based index
+        search_end = _nov_30_julian(year) - 1  # 0-based index (inclusive)
         values = series.to_numpy(dtype=float)
         n = len(values)
 
@@ -281,8 +287,8 @@ class IELSCalculator(BaseIndicatorCalculator):
         max_start = min(search_end, n - 20)
 
         for i in range(search_start, max_start + 1):
-            window10 = values[i:i + 10]
-            window20 = values[i:i + 20]
+            window10 = values[i : i + 10]
+            window20 = values[i : i + 20]
 
             # Condition 1: 10-day precipitation sum < 5 mm (NaN → 0)
             p10 = float(np.nansum(window10))
@@ -350,4 +356,4 @@ class IELSCalculator(BaseIndicatorCalculator):
             saved=saved,
             total=len(records),
         )
-        return saved == len(records)
+        return bool(saved == len(records))

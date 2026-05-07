@@ -122,13 +122,13 @@ def parse_args():  # type: ignore[no-untyped-def]
         "--indicator_years",
         metavar="YYYY-YYYY",
         help="Year range for indicator calculation, e.g. '2000-2020'. "
-             "If omitted, the --date_range years are used.",
+        "If omitted, the --date_range years are used.",
     )
     parser.add_argument(
         "--skip_processing",
         action="store_true",
         help="Skip daily/monthly data ingestion and jump directly to indicators. "
-             "Requires --indicators and a date range.",
+        "Requires --indicators and a date range.",
     )
 
     args = parser.parse_args()
@@ -160,14 +160,18 @@ def parse_args():  # type: ignore[no-untyped-def]
 
         # Validate all_dates flag is only used with CSV source
         if args.all_dates and args.source != "csv":
-            error("--all_dates flag can only be used with CSV source", component="setup")
+            error(
+                "--all_dates flag can only be used with CSV source", component="setup"
+            )
             parser.error("--all_dates flag is only available when --source csv is used")
 
     # Validate --indicator_years format when provided
     if args.indicator_years:
         parts = args.indicator_years.split("-")
         if len(parts) != 2 or not all(p.isdigit() and len(p) == 4 for p in parts):
-            parser.error("--indicator_years must be in YYYY-YYYY format, e.g. '2000-2020'")
+            parser.error(
+                "--indicator_years must be in YYYY-YYYY format, e.g. '2000-2020'"
+            )
         if int(parts[0]) > int(parts[1]):
             parser.error("--indicator_years start year must be <= end year")
 
@@ -399,6 +403,8 @@ def main() -> None:
         # ------------------------------------------------------------------
         if args.skip_processing:
             info("Skipping data processing (--skip_processing)", component="main")
+            assert indicator_start_date is not None
+            assert indicator_end_date is not None
             _run_indicators(args.country, indicator_start_date, indicator_end_date)
             info("Pipeline (indicators only) completed", component="main")
             return
@@ -529,6 +535,8 @@ def main() -> None:
         # Indicators calculation
         # ------------------------------------------------------------------
         if args.indicators:
+            assert indicator_start_date is not None
+            assert indicator_end_date is not None
             _run_indicators(args.country, indicator_start_date, indicator_end_date)
 
         info(
