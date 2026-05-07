@@ -3,11 +3,12 @@ import calendar
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 import pandas as pd
 
 from .climate_processing.climatology_calculator import ClimatologyCalculator
+from .climate_processing.indicators_processor import IndicatorsProcessor
 from .data_managment import CSVClient, DatabaseManager, GeoServerClient
 from .tools.logging_manager import error, info, warning
 
@@ -45,6 +46,19 @@ except ImportError:
 # CSV mode with all dates:
 # python -m src.aclimate_v3_historical_location_etl.aclimate_run_etl \
 #   --all_dates --country HONDURAS --all_locations --source csv --csv_path path\data_test
+#
+# Indicators only (skip data ingestion, explicit year range):
+# python -m src.aclimate_v3_historical_location_etl.aclimate_run_etl \
+#   --country HONDURAS --indicators --skip_processing --indicator_years 2000-2020
+#
+# Indicators only (skip data ingestion, reuse date_range years):
+# python -m src.aclimate_v3_historical_location_etl.aclimate_run_etl \
+#   --country HONDURAS --date_range 2000-01 2020-12 --indicators --skip_processing
+#
+# Full pipeline with indicators appended (ingest + indicators):
+# python -m src.aclimate_v3_historical_location_etl.aclimate_run_etl \
+#   --date_range 2025-01 2025-12 --country HONDURAS --all_locations --source geoserver \
+#   --indicators --indicator_years 2000-2020
 
 
 def parse_args():  # type: ignore[no-untyped-def]
@@ -99,25 +113,63 @@ def parse_args():  # type: ignore[no-untyped-def]
         action="store_true",
         help="Calculate and save monthly climatology for processed stations",
     )
+    parser.add_argument(
+        "--indicators",
+        action="store_true",
+        help="Calculate and save location climate indicators for the country",
+    )
+    parser.add_argument(
+        "--indicator_years",
+        metavar="YYYY-YYYY",
+        help="Year range for indicator calculation, e.g. '2000-2020'. "
+             "If omitted, the --date_range years are used.",
+    )
+    parser.add_argument(
+        "--skip_processing",
+        action="store_true",
+        help="Skip daily/monthly data ingestion and jump directly to indicators. "
+             "Requires --indicators and a date range.",
+    )
 
     args = parser.parse_args()
 
-    # Validate date arguments - exactly one must be specified
-    if bool(args.date_range) == bool(args.all_dates):
-        if not args.date_range and not args.all_dates:
-            parser.error("Either --date_range or --all_dates must be specified")
-        else:
-            parser.error("Cannot specify both --date_range and --all_dates")
+    # --skip_processing requires --indicators
+    if args.skip_processing and not args.indicators:
+        parser.error("--skip_processing requires --indicators to be set")
 
-    # Validate CSV path is provided when source is CSV
-    if args.source == "csv" and not args.csv_path:
-        error("CSV path is required when using CSV source", component="setup")
-        parser.error("--csv_path is required when --source csv is used")
+    # Validate date arguments - required unless skipping processing with indicator_years
+    if not args.skip_processing or not args.indicator_years:
+        if bool(args.date_range) == bool(args.all_dates):
+            if not args.date_range and not args.all_dates:
+                parser.error("Either --date_range or --all_dates must be specified")
+            else:
+                parser.error("Cannot specify both --date_range and --all_dates")
 
-    # Validate all_dates flag is only used with CSV source
-    if args.all_dates and args.source != "csv":
-        error("--all_dates flag can only be used with CSV source", component="setup")
-        parser.error("--all_dates flag is only available when --source csv is used")
+    # When skipping processing, a date range must still be available
+    if args.skip_processing and not args.date_range and not args.indicator_years:
+        parser.error(
+            "--skip_processing requires either --date_range or --indicator_years"
+        )
+
+    # Source/CSV validations only apply when actually processing data
+    if not args.skip_processing:
+        # Validate CSV path is provided when source is CSV
+        if args.source == "csv" and not args.csv_path:
+            error("CSV path is required when using CSV source", component="setup")
+            parser.error("--csv_path is required when --source csv is used")
+
+        # Validate all_dates flag is only used with CSV source
+        if args.all_dates and args.source != "csv":
+            error("--all_dates flag can only be used with CSV source", component="setup")
+            parser.error("--all_dates flag is only available when --source csv is used")
+
+    # Validate --indicator_years format when provided
+    if args.indicator_years:
+        parts = args.indicator_years.split("-")
+        if len(parts) != 2 or not all(p.isdigit() and len(p) == 4 for p in parts):
+            parser.error("--indicator_years must be in YYYY-YYYY format, e.g. '2000-2020'")
+        if int(parts[0]) > int(parts[1]):
+            parser.error("--indicator_years start year must be <= end year")
 
     # Default to all locations if no location selection specified
     if not args.location_ids and not args.all_locations:
@@ -131,6 +183,47 @@ def parse_args():  # type: ignore[no-untyped-def]
         "Command line arguments parsed successfully", component="setup", args=vars(args)
     )
     return args
+
+
+def _run_indicators(
+    country: str,
+    start_date: str,
+    end_date: str,
+) -> None:
+    """
+    Instantiate and run the IndicatorsProcessor for the given country and date range.
+
+    Args:
+        country: Country name (uppercase).
+        start_date: Start date in YYYY-MM format.
+        end_date: End date in YYYY-MM format.
+    """
+    info(
+        "Starting indicators calculation",
+        component="processing",
+        country=country,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+    indicators_processor = IndicatorsProcessor(
+        country=country,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+    indicators_processor.process_all_indicators()
+
+    available_indicators = indicators_processor.get_available_indicators()
+    indicator_names = [ind.get("short_name", "Unknown") for ind in available_indicators]
+
+    info(
+        f"Indicators calculation completed: {indicator_names}",
+        component="processing",
+        country=country,
+        indicators_count=len(available_indicators),
+        indicators=indicator_names,
+    )
 
 
 def validate_dates(date_range=None, all_dates=False):  # type: ignore[no-untyped-def]
@@ -279,6 +372,37 @@ def main() -> None:
         # Parse arguments
         args = parse_args()
 
+        # ------------------------------------------------------------------
+        # Resolve indicator date range early (needed even for skip_processing)
+        # ------------------------------------------------------------------
+        indicator_start_date: Optional[str] = None
+        indicator_end_date: Optional[str] = None
+
+        if args.indicators:
+            if args.indicator_years:
+                start_yr, end_yr = args.indicator_years.split("-")
+                indicator_start_date = f"{start_yr}-01"
+                indicator_end_date = f"{end_yr}-12"
+            elif args.date_range:
+                indicator_start_date = args.date_range[0]
+                indicator_end_date = args.date_range[1]
+            else:
+                error(
+                    "No date range available for indicators. "
+                    "Use --indicator_years or --date_range.",
+                    component="main",
+                )
+                sys.exit(1)
+
+        # ------------------------------------------------------------------
+        # Skip data processing if requested
+        # ------------------------------------------------------------------
+        if args.skip_processing:
+            info("Skipping data processing (--skip_processing)", component="main")
+            _run_indicators(args.country, indicator_start_date, indicator_end_date)
+            info("Pipeline (indicators only) completed", component="main")
+            return
+
         # Initialize database manager
         try:
             db_manager = DatabaseManager()
@@ -400,6 +524,12 @@ def main() -> None:
         # climatologies for the stations in the extracted data
         if args.climatology:
             calculate_and_save_climatologies_from_data(db_manager, data)
+
+        # ------------------------------------------------------------------
+        # Indicators calculation
+        # ------------------------------------------------------------------
+        if args.indicators:
+            _run_indicators(args.country, indicator_start_date, indicator_end_date)
 
         info(
             "ETL Pipeline completed successfully",
