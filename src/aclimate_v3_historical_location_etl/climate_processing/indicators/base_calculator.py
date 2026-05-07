@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
-from ...tools.logging_manager import info, error, warning
+from ...tools.logging_manager import error, info, warning
 
 
 class BaseIndicatorCalculator(ABC):
@@ -16,7 +16,7 @@ class BaseIndicatorCalculator(ABC):
     """
 
     # Must be overridden in subclasses
-    INDICATOR_CODE: str = None
+    INDICATOR_CODE: str = ""
     SUPPORTED_TEMPORALITIES: List[str] = []
 
     # Additional short_names whose DB entries are produced by this same calculator.
@@ -101,7 +101,7 @@ class BaseIndicatorCalculator(ABC):
                 return False
 
             method = getattr(self, method_name)
-            result = method()
+            result: bool = bool(method())
 
             if result:
                 info(

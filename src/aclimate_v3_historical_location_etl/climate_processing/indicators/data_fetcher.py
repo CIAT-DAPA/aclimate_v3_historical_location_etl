@@ -4,7 +4,6 @@ from datetime import date
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
-
 from aclimate_v3_orm.services import (
     ClimateHistoricalDailyService,
     MngClimateMeasureService,
@@ -47,9 +46,7 @@ class IndicatorDataFetcher:
         self.variable = variable
         self.start_year = int(year_range[0])
         self.end_year = int(year_range[1])
-        self.parallel_workers = int(
-            os.getenv("MAX_PARALLEL_WORKERS", parallel_workers)
-        )
+        self.parallel_workers = int(os.getenv("MAX_PARALLEL_WORKERS", parallel_workers))
 
         self._daily_service = ClimateHistoricalDailyService()
         self._measure_service = MngClimateMeasureService()

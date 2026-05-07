@@ -26,16 +26,18 @@ before this calculator is invoked.
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, timedelta
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-
 from aclimate_v3_orm.enums import Period
 from aclimate_v3_orm.schemas import ClimateHistoricalIndicatorCreate
-from aclimate_v3_orm.services import ClimateHistoricalIndicatorService, MngIndicatorService
+from aclimate_v3_orm.services import (
+    ClimateHistoricalIndicatorService,
+    MngIndicatorService,
+)
 
-from ....tools.logging_manager import error, info, warning
+from ....tools.logging_manager import info, warning
 from ..base_calculator import BaseIndicatorCalculator
 from ..data_fetcher import IndicatorDataFetcher
 
@@ -73,11 +75,17 @@ class IELLCalculator(BaseIndicatorCalculator):
     # They must exist in mng_indicators but do NOT need their own calculator class.
     SECONDARY_CODES = ["IELL-Anomalie", "IELL-decade"]
 
-    def __init__(self, indicator_config, start_date, end_date, country_code):
+    def __init__(
+        self,
+        indicator_config: Dict[str, Any],
+        start_date: str,
+        end_date: str,
+        country_code: str,
+    ) -> None:
         super().__init__(indicator_config, start_date, end_date, country_code)
         self._max_workers = int(os.getenv("MAX_PARALLEL_WORKERS", 4))
         # {short_name: IndicatorRead}  populated by _resolve_sub_indicators
-        self._indicator_meta: Dict[str, object] = {}
+        self._indicator_meta: Dict[str, Any] = {}
         # {location_id: mean_jstar_1991_2020}  populated by _build_norm
         self._norm_jstar: Dict[int, float] = {}
         self._resolve_sub_indicators()
@@ -153,9 +161,7 @@ class IELLCalculator(BaseIndicatorCalculator):
 
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
             futures = {
-                executor.submit(
-                    self._process_year, year, yearly_data.get(year)
-                ): year
+                executor.submit(self._process_year, year, yearly_data.get(year)): year
                 for year in target_years
             }
             for future in as_completed(futures):
@@ -281,14 +287,14 @@ class IELLCalculator(BaseIndicatorCalculator):
         NaN values are treated as 0 mm (partial sum).
         Returns None if no qualifying day exists.
         """
-        start_idx = _march_1_julian(year) - 1   # convert to 0-based index
-        values = series.to_numpy(dtype=float)   # NaN preserved as float NaN
+        start_idx = _march_1_julian(year) - 1  # convert to 0-based index
+        values = series.to_numpy(dtype=float)  # NaN preserved as float NaN
         n = len(values)
 
         for i in range(start_idx, n - 29):
-            d0 = float(np.nansum(values[i:i + 10]))
-            d1 = float(np.nansum(values[i + 10:i + 20]))
-            d2 = float(np.nansum(values[i + 20:i + 30]))
+            d0 = float(np.nansum(values[i : i + 10]))
+            d1 = float(np.nansum(values[i + 10 : i + 20]))
+            d2 = float(np.nansum(values[i + 20 : i + 30]))
             if d0 >= 20.0 and d1 > 0.0 and d2 > 0.0:
                 return i + 1  # back to 1-based julian day
 
@@ -356,4 +362,4 @@ class IELLCalculator(BaseIndicatorCalculator):
             saved=saved,
             total=len(records),
         )
-        return saved == len(records)
+        return bool(saved == len(records))

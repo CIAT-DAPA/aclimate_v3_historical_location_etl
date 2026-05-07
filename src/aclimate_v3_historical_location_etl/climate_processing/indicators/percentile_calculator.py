@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 
+from ...tools.logging_manager import error, info
 from .base_calculator import BaseIndicatorCalculator
 from .data_fetcher import IndicatorDataFetcher
-from ...tools.logging_manager import error, info, warning
 
 
 class PercentileBasedCalculator(BaseIndicatorCalculator, ABC):
@@ -82,7 +82,9 @@ class PercentileBasedCalculator(BaseIndicatorCalculator, ABC):
     def _get_cache_key(self) -> str:
         """Generate a unique percentile cache key for this calculator configuration."""
         if self._cache_key is None:
-            percentiles_str = "_".join(str(p) for p in sorted(self.required_percentiles))
+            percentiles_str = "_".join(
+                str(p) for p in sorted(self.required_percentiles)
+            )
             self._cache_key = (
                 f"{self.country_code}_{self.data_variable}"
                 f"_{percentiles_str}"
@@ -152,7 +154,9 @@ class PercentileBasedCalculator(BaseIndicatorCalculator, ABC):
         """
         try:
             base_data_key = self._get_base_data_cache_key()
-            base_years = list(range(int(self.base_period_start), int(self.base_period_end) + 1))
+            base_years = list(
+                range(int(self.base_period_start), int(self.base_period_end) + 1)
+            )
 
             # Populate base period data cache if needed
             if base_data_key not in self._base_period_data_cache:

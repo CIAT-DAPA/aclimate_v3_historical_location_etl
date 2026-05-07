@@ -5,8 +5,8 @@ import types
 from pathlib import Path
 from typing import Dict, Optional, Type
 
-from .base_calculator import BaseIndicatorCalculator
 from ...tools.logging_manager import error, info, warning
+from .base_calculator import BaseIndicatorCalculator
 
 
 class CalculatorLoader:
@@ -51,9 +51,7 @@ class CalculatorLoader:
 
             # Only load regular .py files; skip __init__.py and private files
             calculator_files = [
-                f
-                for f in calculators_dir.glob("*.py")
-                if not f.name.startswith("_")
+                f for f in calculators_dir.glob("*.py") if not f.name.startswith("_")
             ]
 
             info(
@@ -117,6 +115,8 @@ class CalculatorLoader:
                     calc_spec = importlib.util.spec_from_file_location(
                         calculators_pkg, calculators_init
                     )
+                    if calc_spec is None or calc_spec.loader is None:
+                        return
                     calc_mod = importlib.util.module_from_spec(calc_spec)
                     calc_mod.__path__ = [str(py_file.parent)]
                     calc_mod.__package__ = calculators_pkg
@@ -185,7 +185,7 @@ class CalculatorLoader:
                     file=py_file.name,
                 )
 
-                for secondary_code in (getattr(obj, "SECONDARY_CODES", None) or []):
+                for secondary_code in getattr(obj, "SECONDARY_CODES", None) or []:
                     secondary_upper = secondary_code.upper()
                     cls._calculators[secondary_upper] = obj
                     info(

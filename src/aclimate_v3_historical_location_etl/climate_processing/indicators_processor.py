@@ -99,9 +99,7 @@ class IndicatorsProcessor:
             if self.country_data is None:
                 countries = self.country_service.get_by_name(self.country)
                 if not countries:
-                    raise ValueError(
-                        f"Country '{self.country}' not found in database"
-                    )
+                    raise ValueError(f"Country '{self.country}' not found in database")
                 self.country_data = countries[0].model_dump()
 
                 # Resolve iso2 from DB (field is 'iso2', stored as lowercase)
@@ -272,7 +270,10 @@ class IndicatorsProcessor:
                 short_name = indicator.get("short_name", "UNKNOWN")
                 calculator_class = CalculatorLoader.get_calculator(short_name)
 
-                if calculator_class is not None and calculator_class in executed_calculators:
+                if (
+                    calculator_class is not None
+                    and calculator_class in executed_calculators
+                ):
                     info(
                         "Skipping secondary indicator — already handled by its primary calculator",
                         component="indicators_processor",
