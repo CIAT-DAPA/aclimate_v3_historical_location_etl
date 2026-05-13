@@ -149,6 +149,13 @@ class IELLCalculator(BaseIndicatorCalculator):
             warning("No precipitation data returned", component="iell_calculator")
             return False
 
+        info(
+            "Years with data available for IELL",
+            component="iell_calculator",
+            years_available=sorted(yearly_data.keys()),
+            target_years_missing=[y for y in target_years if y not in yearly_data],
+        )
+
         # Build the per-station norm (mean j* over 1991-2020)
         self._build_norm(yearly_data, norm_years)
 
@@ -172,6 +179,13 @@ class IELLCalculator(BaseIndicatorCalculator):
                         results["IELL"][year] = year_result["IELL"]
                         results["IELL-Anomalie"][year] = year_result["IELL-Anomalie"]
                         results["IELL-decade"][year] = year_result["IELL-decade"]
+                        info(
+                            "IELL year summary",
+                            component="iell_calculator",
+                            year=year,
+                            stations_onset=len(year_result["IELL"]),
+                            stations_anomalie=len(year_result["IELL-Anomalie"]),
+                        )
                 except Exception as exc:
                     warning(
                         "IELL year processing error",
@@ -210,6 +224,15 @@ class IELLCalculator(BaseIndicatorCalculator):
             if vals
         }
 
+        norm_years_available = [y for y in norm_years if yearly_data.get(y) is not None]
+        if len(norm_years_available) < 10:
+            warning(
+                "IELL norm built from very few years — IELL-Anomalie values will be "
+                "unreliable. Load the full 1991–2020 baseline for accurate anomalies.",
+                component="iell_calculator",
+                norm_years_available=norm_years_available,
+            )
+
         info(
             "IELL 1991-2020 norm computed",
             component="iell_calculator",
@@ -233,6 +256,11 @@ class IELLCalculator(BaseIndicatorCalculator):
             mapping location_id -> value.  Returns None if df is empty.
         """
         if df is None or df.empty:
+            warning(
+                "No data for year — skipping",
+                component="iell_calculator",
+                year=year,
+            )
             return None
 
         iell_vals: Dict[int, float] = {}
@@ -243,6 +271,12 @@ class IELLCalculator(BaseIndicatorCalculator):
             series = self._to_julian_series(group, year)
             j = self._find_jstar(series, year)
             if j is None:
+                warning(
+                    "No rainy season onset found in search window — station skipped",
+                    component="iell_calculator",
+                    year=year,
+                    loc_id=int(loc_id),
+                )
                 continue
 
             iell_vals[int(loc_id)] = float(j)
