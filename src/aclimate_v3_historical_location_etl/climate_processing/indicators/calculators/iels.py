@@ -51,10 +51,11 @@ _NORM_END = 2020
 # Lower bound (May 1) is the theoretical earliest; the effective minimum is
 # _ONSET_MIN_MONTH (August) to avoid confusing the canícula dry spell with the
 # true dry-season onset.  Change _ONSET_MIN_MONTH to adjust per-country.
-_SEARCH_START_MONTH = 5   # May  — theoretical lower bound (kept for reference)
-_SEARCH_END_MONTH = 11    # November
-_ONSET_MIN_MONTH = 8      # August — effective minimum for j* to avoid canícula false positives
-
+_SEARCH_START_MONTH = 5  # May  — theoretical lower bound (kept for reference)
+_SEARCH_END_MONTH = 11  # November
+_ONSET_MIN_MONTH = (
+    8  # August — effective minimum for j* to avoid canícula false positives
+)
 
 
 def _is_leap(year: int) -> bool:
@@ -331,7 +332,7 @@ class IELSCalculator(BaseIndicatorCalculator):
         Returns None if no qualifying day exists in the search window.
         """
         search_start = _onset_min_julian(year) - 1  # 0-based index, Aug 1
-        search_end = _nov_30_julian(year) - 1        # 0-based index, Nov 30
+        search_end = _nov_30_julian(year) - 1  # 0-based index, Nov 30
         values = series.to_numpy(dtype=float)
         n = len(values)
 
