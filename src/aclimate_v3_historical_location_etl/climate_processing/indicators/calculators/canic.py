@@ -447,7 +447,7 @@ class CANICCalculator(BaseIndicatorCalculator):
             jend = self._find_jend(series, year, jstar, decade_norm)
             if jend is None:
                 warning(
-                    "Canícula onset found but no two-decade recovery before year end — station skipped",
+                    "Canícula onset found but no recovery detected before August 21 — station skipped",
                     component="canic_calculator",
                     year=year,
                     loc_id=loc_id,
@@ -537,46 +537,44 @@ class CANICCalculator(BaseIndicatorCalculator):
         """
         Return the last 1-based julian day of the canícula (j_end).
 
-        j_end = D - 1, where D is the first calendar-decade start strictly
-        after j* such that BOTH decade D and the immediately following calendar
-        decade satisfy P10 >= 0.75 · P̄_10,n.
+        Searches day by day within the July–August window, starting from
+        jstar + 10 (the day immediately after the onset's 10-day window).
+        The search upper bound is August 21 — the last position where a
+        10-day window fits entirely within July–August.
 
-        Returns None if no such recovery is found (canícula unresolved).
+        j_end is the first day j where:
+            sum(P[j..j+9]) >= 0.75 · P̄_10,n(decade of j)
+
+        The canícula period is [jstar, j_end] inclusive.
+
+        Returns None if no recovery is found within the July–August window.
         """
         values = series.to_numpy(dtype=float)
         n = len(values)
 
-        # Collect all calendar decade starts strictly after jstar, in order
-        decade_starts: List[Tuple[int, int, int]] = []  # (julian_1based, month, dec_num)
-        for month in range(1, 13):
-            for dec_num in (1, 2, 3):
-                day_start = (dec_num - 1) * 10 + 1
-                try:
-                    j = date(year, month, day_start).timetuple().tm_yday
-                except ValueError:
-                    continue
-                if j > jstar:
-                    decade_starts.append((j, month, dec_num))
-        decade_starts.sort()
+        # 0-based: first candidate is 10 days after onset
+        search_start = jstar + 9   # 0-based index → julian day jstar+10 (1-based)
+        # For early onsets the upper bound is Aug 21 (last position where the
+        # 10-day window fits within July–August without extending past Aug 31).
+        # For late onsets (onset > ~Aug 11) search_start exceeds Aug 21, so we
+        # extend the bound to search_start itself — capped at Aug 31.  The
+        # 10-day window is allowed to spill into September because `values`
+        # covers the full year (matching R's rollsum-on-full-year behaviour).
+        aug_31_0 = _aug_31_julian(year) - 1   # 0-based index of Aug 31
+        search_end = min(max(aug_31_0 - 10, search_start), aug_31_0)
 
-        for idx in range(len(decade_starts) - 1):
-            j1, m1, d1 = decade_starts[idx]
-            j2, m2, d2 = decade_starts[idx + 1]
-
-            # Both decades need at least 10 values available
-            if j1 - 1 + 10 > n or j2 - 1 + 10 > n:
+        for i in range(search_start, search_end + 1):
+            if i + 10 > n:
                 break
 
-            norm_1 = decade_norm.get((m1, d1), 0.0)
-            norm_2 = decade_norm.get((m2, d2), 0.0)
-            if norm_1 <= 0.0 or norm_2 <= 0.0:
+            p10 = float(np.nansum(values[i: i + 10]))
+            dec_key = cls._get_decade_key(i + 1, year)
+            norm = decade_norm.get(dec_key, 0.0)
+            if norm <= 0.0:
                 continue
 
-            p10_1 = float(np.nansum(values[j1 - 1: j1 + 9]))
-            p10_2 = float(np.nansum(values[j2 - 1: j2 + 9]))
-
-            if p10_1 >= _NORM_FRACTION * norm_1 and p10_2 >= _NORM_FRACTION * norm_2:
-                return j1 - 1  # last day of canícula (1-based)
+            if p10 >= _NORM_FRACTION * norm:
+                return i + 1  # 1-based julian day (recovery day, inclusive end)
 
         return None
 
