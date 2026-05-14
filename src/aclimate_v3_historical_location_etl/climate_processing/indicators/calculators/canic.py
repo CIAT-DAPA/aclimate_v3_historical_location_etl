@@ -303,7 +303,9 @@ class CANICCalculator(BaseIndicatorCalculator):
                 norm_frames.append(df)
 
         if not norm_frames:
-            warning("No norm-period data available for CANIC", component="canic_calculator")
+            warning(
+                "No norm-period data available for CANIC", component="canic_calculator"
+            )
             return
 
         norm_years_available = [y for y in norm_years if yearly_data.get(y) is not None]
@@ -338,7 +340,9 @@ class CANICCalculator(BaseIndicatorCalculator):
         )
         self._daily_norm = {}
         for (loc_id, month, day), val in daily_grouped.items():
-            self._daily_norm.setdefault(int(loc_id), {})[(int(month), int(day))] = float(val)
+            self._daily_norm.setdefault(int(loc_id), {})[(int(month), int(day))] = (
+                float(val)
+            )
 
         # --- Decade norms ---
         # For each (station, year), build the julian series and sum the 10 days
@@ -356,10 +360,12 @@ class CANICCalculator(BaseIndicatorCalculator):
                 for dec_num in (1, 2, 3):
                     day_start = (dec_num - 1) * 10 + 1
                     try:
-                        j0 = date(year_val, month, day_start).timetuple().tm_yday - 1  # 0-based
+                        j0 = (
+                            date(year_val, month, day_start).timetuple().tm_yday - 1
+                        )  # 0-based
                     except ValueError:
                         continue
-                    window = values[j0: j0 + 10]
+                    window = values[j0 : j0 + 10]
                     if len(window) == 10:
                         decade_acc.setdefault(loc_id, {}).setdefault(
                             (month, dec_num), []
@@ -502,8 +508,8 @@ class CANICCalculator(BaseIndicatorCalculator):
         Days whose decade has a zero or missing norm are skipped.
         Returns None if no qualifying day is found in the search window.
         """
-        search_start = _jul_1_julian(year) - 1   # 0-based index
-        search_end = _aug_31_julian(year) - 1     # 0-based index (inclusive)
+        search_start = _jul_1_julian(year) - 1  # 0-based index
+        search_end = _aug_31_julian(year) - 1  # 0-based index (inclusive)
         values = series.to_numpy(dtype=float)
         n = len(values)
 
@@ -511,7 +517,7 @@ class CANICCalculator(BaseIndicatorCalculator):
         max_start = min(search_end, n - 10)
 
         for i in range(search_start, max_start + 1):
-            p10 = float(np.nansum(values[i: i + 10]))
+            p10 = float(np.nansum(values[i : i + 10]))
             dec_key = cls._get_decade_key(i + 1, year)
             norm = decade_norm.get(dec_key, 0.0)
             if norm <= 0.0:
@@ -553,21 +559,21 @@ class CANICCalculator(BaseIndicatorCalculator):
         n = len(values)
 
         # 0-based: first candidate is 10 days after onset
-        search_start = jstar + 9   # 0-based index → julian day jstar+10 (1-based)
+        search_start = jstar + 9  # 0-based index → julian day jstar+10 (1-based)
         # For early onsets the upper bound is Aug 21 (last position where the
         # 10-day window fits within July–August without extending past Aug 31).
         # For late onsets (onset > ~Aug 11) search_start exceeds Aug 21, so we
         # extend the bound to search_start itself — capped at Aug 31.  The
         # 10-day window is allowed to spill into September because `values`
         # covers the full year (matching R's rollsum-on-full-year behaviour).
-        aug_31_0 = _aug_31_julian(year) - 1   # 0-based index of Aug 31
+        aug_31_0 = _aug_31_julian(year) - 1  # 0-based index of Aug 31
         search_end = min(max(aug_31_0 - 10, search_start), aug_31_0)
 
         for i in range(search_start, search_end + 1):
             if i + 10 > n:
                 break
 
-            p10 = float(np.nansum(values[i: i + 10]))
+            p10 = float(np.nansum(values[i : i + 10]))
             dec_key = cls._get_decade_key(i + 1, year)
             norm = decade_norm.get(dec_key, 0.0)
             if norm <= 0.0:
@@ -626,7 +632,7 @@ class CANICCalculator(BaseIndicatorCalculator):
         Returns None when P_norm is zero (cannot divide).
         """
         values = series.to_numpy(dtype=float)
-        actual_sum = float(np.nansum(values[jstar - 1: jend]))
+        actual_sum = float(np.nansum(values[jstar - 1 : jend]))
 
         base_date = date(year, 1, 1)
         norm_sum = 0.0

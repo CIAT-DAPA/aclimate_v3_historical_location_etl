@@ -401,7 +401,7 @@ class PRCDCalculator(BaseIndicatorCalculator):
 
     def _save_results_to_db(
         self,
-        records: List[ClimateHistoricalIndicatorCreate],
+        records: Any,
     ) -> bool:
         if not records:
             warning("No PRCD records to save", component="prcd_calculator")
