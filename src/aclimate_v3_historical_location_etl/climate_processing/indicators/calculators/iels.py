@@ -47,9 +47,15 @@ _SUB_INDICATORS = ("IELS", "IELS-Anomalie", "IELS-decade")
 _NORM_START = 1991
 _NORM_END = 2020
 
-# Search window: May 1 – Nov 30
-_SEARCH_START_MONTH = 5  # May
+# Search window bounds for j*
+# Lower bound (May 1) is the theoretical earliest; the effective minimum is
+# _ONSET_MIN_MONTH (August) to avoid confusing the canícula dry spell with the
+# true dry-season onset.  Change _ONSET_MIN_MONTH to adjust per-country.
+_SEARCH_START_MONTH = 5  # May  — theoretical lower bound (kept for reference)
 _SEARCH_END_MONTH = 11  # November
+_ONSET_MIN_MONTH = (
+    8  # August — effective minimum for j* to avoid canícula false positives
+)
 
 
 def _is_leap(year: int) -> bool:
@@ -59,6 +65,11 @@ def _is_leap(year: int) -> bool:
 def _may_1_julian(year: int) -> int:
     """Return the 1-based julian day of May 1 for the given year."""
     return date(year, 5, 1).timetuple().tm_yday
+
+
+def _onset_min_julian(year: int) -> int:
+    """Return the 1-based julian day of the effective search start (_ONSET_MIN_MONTH 1)."""
+    return date(year, _ONSET_MIN_MONTH, 1).timetuple().tm_yday
 
 
 def _nov_30_julian(year: int) -> int:
@@ -150,6 +161,13 @@ class IELSCalculator(BaseIndicatorCalculator):
             warning("No precipitation data returned", component="iels_calculator")
             return False
 
+        info(
+            "Years with data available for IELS",
+            component="iels_calculator",
+            years_available=sorted(yearly_data.keys()),
+            target_years_missing=[y for y in target_years if y not in yearly_data],
+        )
+
         self._build_norm(yearly_data, norm_years)
 
         results: Dict[str, Dict[int, Dict[int, float]]] = {
@@ -171,6 +189,13 @@ class IELSCalculator(BaseIndicatorCalculator):
                         results["IELS"][year] = year_result["IELS"]
                         results["IELS-Anomalie"][year] = year_result["IELS-Anomalie"]
                         results["IELS-decade"][year] = year_result["IELS-decade"]
+                        info(
+                            "IELS year summary",
+                            component="iels_calculator",
+                            year=year,
+                            stations_onset=len(year_result["IELS"]),
+                            stations_anomalie=len(year_result["IELS-Anomalie"]),
+                        )
                 except Exception as exc:
                     warning(
                         "IELS year processing error",
@@ -209,6 +234,15 @@ class IELSCalculator(BaseIndicatorCalculator):
             if vals
         }
 
+        norm_years_available = [y for y in norm_years if yearly_data.get(y) is not None]
+        if len(norm_years_available) < 10:
+            warning(
+                "IELS norm built from very few years — IELS-Anomalie values will be "
+                "unreliable. Load the full 1991–2020 baseline for accurate anomalies.",
+                component="iels_calculator",
+                norm_years_available=norm_years_available,
+            )
+
         info(
             "IELS 1991-2020 norm computed",
             component="iels_calculator",
@@ -225,6 +259,11 @@ class IELSCalculator(BaseIndicatorCalculator):
         df: Optional[pd.DataFrame],
     ) -> Optional[Dict[str, Dict[int, float]]]:
         if df is None or df.empty:
+            warning(
+                "No data for year — skipping",
+                component="iels_calculator",
+                year=year,
+            )
             return None
 
         iels_vals: Dict[int, float] = {}
@@ -235,6 +274,12 @@ class IELSCalculator(BaseIndicatorCalculator):
             series = self._to_julian_series(group, year)
             j = self._find_jstar(series, year)
             if j is None:
+                warning(
+                    "No dry season onset found in May–Nov window — station skipped",
+                    component="iels_calculator",
+                    year=year,
+                    loc_id=int(loc_id),
+                )
                 continue
 
             iels_vals[int(loc_id)] = float(j)
@@ -271,35 +316,44 @@ class IELSCalculator(BaseIndicatorCalculator):
     @staticmethod
     def _find_jstar(series: pd.Series, year: int) -> Optional[int]:
         """
-        Return the first julian day j* in [May 1, Nov 30] where both conditions hold:
-          (1) sum(P[j*..j*+9])         < 5 mm
-          (2) count(P[j*+k] < 1 mm, k=0..19) >= 15 days
+        Return the first julian day j* in [Aug 1, Nov 30] where both conditions
+        hold simultaneously:
 
-        NaN values are treated as 0 mm (dry day, contributes to DSC).
+          (1) sum(P[j*..j*+9])                < 5 mm
+          (2) count(P[j*+k] < 1 mm, k=0..19) >= 15 days  (observed days only)
+
+        The search starts from August 1 (_ONSET_MIN_MONTH) rather than May 1
+        to avoid confusing the canícula (July–August) with the dry-season onset.
+        No persistence guard is applied: the August lower bound is sufficient
+        to exclude canícula false positives, and the guard was causing valid
+        late-October / November onsets to be rejected.
+
+        NaN is not treated as a dry day; only observed values < 1 mm count.
         Returns None if no qualifying day exists in the search window.
         """
-        search_start = _may_1_julian(year) - 1  # 0-based index
-        search_end = _nov_30_julian(year) - 1  # 0-based index (inclusive)
+        search_start = _onset_min_julian(year) - 1  # 0-based index, Aug 1
+        search_end = _nov_30_julian(year) - 1  # 0-based index, Nov 30
         values = series.to_numpy(dtype=float)
         n = len(values)
 
-        # Need at least 20 days of lookahead; cap search_end accordingly
+        # Need 20 days for the detection window to fit within the array.
         max_start = min(search_end, n - 20)
 
         for i in range(search_start, max_start + 1):
             window10 = values[i : i + 10]
             window20 = values[i : i + 20]
 
-            # Condition 1: 10-day precipitation sum < 5 mm (NaN → 0)
+            # Condition 1: 10-day precipitation sum < 5 mm
             p10 = float(np.nansum(window10))
             if p10 >= 5.0:
                 continue
 
-            # Condition 2: at least 15 dry days (< 1 mm) in 20-day window
-            # NaN treated as 0 → dry
-            dry_days = int(np.sum(np.where(np.isnan(window20), 0.0, window20) < 1.0))
-            if dry_days >= 15:
-                return i + 1  # back to 1-based julian day
+            # Condition 2: at least 15 observed dry days (< 1 mm) in 20-day window
+            dry_days = int(np.sum((~np.isnan(window20)) & (window20 < 1.0)))
+            if dry_days < 15:
+                continue
+
+            return i + 1  # 1-based julian day
 
         return None
 
