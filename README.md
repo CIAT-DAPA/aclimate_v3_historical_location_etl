@@ -179,7 +179,7 @@ python -m aclimate_v3_historical_location_etl.aclimate_run_etl \
 > - **CSV mode with `--all_locations`**: Processes all locations found in the CSV file
 > - **CSV mode with `--location_ids`**: Validates IDs exist in database, then filters CSV data
 >
-> **CSV Format:** Files should be named `(variable)_daily_data.csv` (e.g., `tmax_daily_data.csv`, `prec_daily_data.csv`) with columns: `ext_id` (or `id`), `day`, `month`, `year`, `value`. Uses PyArrow engine for fast reading.
+> **CSV Format:** Files should be named `(variable)_daily_data.csv` (e.g., `tmax_daily_data.csv`, `tmin_daily_data.csv`, `tmed_daily_data.csv`, `prec_daily_data.csv`, `rad_daily_data.csv`) with columns: `ext_id` (or `id`), `day`, `month`, `year`, `value`. Uses PyArrow engine for fast reading. The variable name in the filename is matched against the database `short_name` (e.g., solar radiation uses `rad`).
 
 ### 2. Programmatic Usage
 
