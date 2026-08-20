@@ -602,12 +602,13 @@ class DatabaseManager:
                 "tmed": "tmed",
                 "tmin": "tmin",
                 "prec": "prec",
-                "sol_rad": "srad",
+                "sol_rad": "rad",
                 "temperature_max": "tmax",
                 "temperature_min": "tmin",
                 "precipitation": "prec",
-                "solar_radiation": "srad",
-                "srad": "srad",
+                "solar_radiation": "rad",
+                "srad": "rad",
+                "rad": "rad",
                 "cmax": "cmax",
                 "cmean": "cmean",
                 "cmin": "cmin",
@@ -682,14 +683,14 @@ class DatabaseManager:
                 if not db_measure:
                     # Fallback mapping for common variables
                     fallback_mapping = {
-                        "rad": "sol_rad",
+                        "rad": "rad",
                         "prec": "prec",
                         "tmax": "tmax",
                         "tmin": "tmin",
                         "precipitation": "prec",
                         "temperature_max": "tmax",
                         "temperature_min": "tmin",
-                        "solar_radiation": "sol_rad",
+                        "solar_radiation": "rad",
                     }
                     db_measure = fallback_mapping.get(config_var_name, config_var_name)
 
