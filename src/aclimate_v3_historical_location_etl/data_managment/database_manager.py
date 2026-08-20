@@ -432,20 +432,30 @@ class DatabaseManager:
         data: pd.DataFrame,
         country: str,
         data_type: str,
-        service_create_func: Any,
+        service: Any,
         schema_class: Any,
         measure_mapping: Dict[str, int],
+        batch_size: int = 1000,
+        commit_interval: int = 50000,
     ) -> bool:
         """
-        Generic method to save climate data with progress bar.
+        Generic method to save climate data with progress bar using bulk inserts.
+
+        Records are accumulated and inserted in chunks so each ``bulk_create``
+        call commits its own transaction. This keeps the progress bar aligned
+        with actual saving (no hidden work after it reaches 100%), limits
+        memory usage, and avoids losing all records if the process fails.
 
         Args:
             data: DataFrame with climate data
             country: Country name for context
             data_type: Type of data being saved (for logging)
-            service_create_func: Function to create data in database
+            service: ORM service instance with a bulk_create method
             schema_class: Schema class for data creation
             measure_mapping: Mapping of variable names to measure IDs
+            batch_size: Number of records to insert per INSERT batch
+            commit_interval: Number of accumulated records before flushing
+                them with a bulk_create call (each call commits)
 
         Returns:
             True if successful, False otherwise
@@ -454,9 +464,18 @@ class DatabaseManager:
             warning(f"No {data_type} data to save", component="database_manager")
             return True
 
-        saved_count = 0
         error_count = 0
+        saved_count = 0
+        buffer: List[Any] = []
         total_rows = len(data)
+
+        def flush_buffer() -> None:
+            """Insert buffered records with a single bulk_create call."""
+            nonlocal buffer, saved_count
+            if not buffer:
+                return
+            saved_count += service.bulk_create(buffer, batch_size=batch_size)
+            buffer = []
 
         with DownloadProgressBar(
             total=total_rows, desc=f"Saving {data_type} data for {country}", unit="rows"
@@ -464,15 +483,18 @@ class DatabaseManager:
 
             for index, row in data.iterrows():
                 try:
-                    row_saved, row_errors = self._process_climate_variables(
+                    records, row_errors = self._build_climate_records(
                         row,
                         set(data.columns),
                         measure_mapping,
-                        service_create_func,
                         schema_class,
                     )
-                    saved_count += row_saved
+                    buffer.extend(records)
                     error_count += row_errors
+
+                    # Flush periodically so data is committed and visible
+                    if len(buffer) >= commit_interval:
+                        flush_buffer()
 
                 except Exception as row_error:
                     error_count += 1
@@ -484,6 +506,17 @@ class DatabaseManager:
                 finally:
                     pbar.update(1)
 
+        # Insert any remaining buffered records
+        try:
+            flush_buffer()
+        except Exception as bulk_error:
+            error(
+                f"Failed to bulk save remaining {data_type} data",
+                component="database_manager",
+                error=str(bulk_error),
+            )
+            return False
+
         info(
             f"{data_type.title()} data processing completed",
             component="database_manager",
@@ -493,37 +526,35 @@ class DatabaseManager:
 
         return error_count == 0
 
-    def _process_climate_variables(
+    def _build_climate_records(
         self,
         row: pd.Series,
         data_columns: set,
         measure_mapping: Dict[str, int],
-        service_create_func: Any,
         schema_class: Any,
         date_field: str = "date",
-    ) -> tuple[int, int]:
+    ) -> tuple[List[Any], int]:
         """
-        Process climate variables for a single row and save to database.
+        Build climate record objects for a single row without saving them.
 
         Args:
             row: DataFrame row containing climate data
             data_columns: Set of all DataFrame columns
             measure_mapping: Mapping of variable names to measure IDs
-            service_create_func: Function to create data in database
             schema_class: Schema class for data creation
             date_field: Name of the date field in the row
 
         Returns:
-            Tuple of (saved_count, error_count)
+            Tuple of (list of schema objects, error_count)
         """
-        saved_count = 0
+        records: List[Any] = []
         error_count = 0
 
         location_id = row.get("location_id")
         date_value = row.get(date_field)
 
         if not location_id or not date_value:
-            return 0, 1
+            return records, 1
 
         # Process each climate variable in the row
         metadata_columns = {
@@ -553,19 +584,14 @@ class DatabaseManager:
                         )
                         continue
 
-                    # Create and save data object
+                    # Build schema object (without saving to database)
                     data_obj = schema_class(
                         location_id=location_id,
                         measure_id=measure_mapping[var_name],
                         date=date_value,
                         value=numeric_value,
                     )
-                    result = service_create_func(data_obj)
-
-                    if result:
-                        saved_count += 1
-                    else:
-                        error_count += 1
+                    records.append(data_obj)
 
                 except ValueError as val_error:
                     error_count += 1
@@ -579,14 +605,14 @@ class DatabaseManager:
                 except Exception as var_error:
                     error_count += 1
                     warning(
-                        f"Failed to save {var_name}",
+                        f"Failed to build {var_name} record",
                         component="database_manager",
                         variable=var_name,
                         value=value,
                         error=str(var_error),
                     )
 
-        return saved_count, error_count
+        return records, error_count
 
     def get_climate_measure_mapping(self) -> Dict[str, int]:
         """
@@ -764,7 +790,7 @@ class DatabaseManager:
                 extracted_data,
                 country,
                 "climate",
-                self.historical_data_service.create,
+                self.historical_data_service,
                 ClimateHistoricalDailyCreate,
                 measure_mapping,
             )
@@ -818,7 +844,7 @@ class DatabaseManager:
                 monthly_data,
                 country,
                 "monthly",
-                ClimateHistoricalMonthlyService().create,
+                self.historical_monthly_service,
                 ClimateHistoricalMonthlyCreate,
                 measure_mapping,
             )
